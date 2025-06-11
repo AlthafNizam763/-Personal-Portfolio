@@ -90,7 +90,7 @@ export default function Contact() {
             <h2>Something special</h2>
           </div>
 
-          <p className='text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-6'>I seek to push the limits of creativity to create high-engaging, user-friendly, and memorable interactive experiences.</p>
+          <p className='text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-6 font-mono'>I seek to push the limits of creativity to create high-engaging, user-friendly, and memorable interactive experiences.</p>
 
           <div className='font-semibold text-sm lg:text-xl flex flex-col mt-6 gap-2 lg:gap-4'>
             <motion.a

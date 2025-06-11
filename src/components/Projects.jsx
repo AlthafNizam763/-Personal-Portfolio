@@ -7,14 +7,14 @@ const projects = [
     id: 1,
     title: "Website for Zenith Academy",
     description: "Discover an informative website designed to help you easily download the app and connect with him directly. Don't miss out on the opportunity to enhance your experience!",
-    image: "/assets/zenith.jpg",
+    image: "assets/zenith.jpg",
     link: "https://www.zenithacademy.in/"
   },
   {
     id: 2,
     title: "Website for MoRe Experts",
     description: "Discover everything you need to know about our company on this website, including various ways to get in touch with us. Don't hesitate to reach out—your inquiries and feedback matter to us!",
-    image: "/assets/more.jpg",
+    image: "assets/more.jpg",
     link: "https://althafnizam763.github.io/xpalico/"
   }
 ];
@@ -50,7 +50,7 @@ export default function Projects() {
               </h2>
               <p className="font-bold text-white text-xl lg:text-3xl">{project.title}</p>
 
-              <p className="font-light text-sm/6 lg:text-base text-[#71717A]">
+              <p className="font-mono text-sm/6 lg:text-base text-[#71717A]">
                 {project.description}
               </p>
               <a href={project.link} className="text-white mt-3 block" target="_blank" rel="noopener noreferrer">

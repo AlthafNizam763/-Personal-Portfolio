@@ -60,7 +60,7 @@ export default function Home() {
           </motion.div>
 
           <motion.p
-            className="text-[#71717A] text-sm lg:text-base mt-5"
+            className="text-[#71717A] text-sm lg:text-base mt-5 font-mono"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1 }}
@@ -102,7 +102,7 @@ export default function Home() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1, ease: "easeInOut" }}
         >
-          <img className="h-full w-full" src="/assets/hero-vector.svg" alt="Hero Vector" />
+          <img className="h-full w-full" src="assets/hero-vector.svg" alt="Hero Vector" />
         </motion.div>
       </div>
     </div>

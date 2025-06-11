@@ -41,7 +41,7 @@ export default function Navbar() {
           whileTap={{ scale: 0.9 }}
           onClick={() => scrollToSection("home")}
           className="h-9 cursor-pointer"
-          src="/assets/logo.svg"
+          src="assets/logo.svg"
           alt="Logo"
         />
 
@@ -64,7 +64,7 @@ export default function Navbar() {
         </ul>
 
         <motion.a
-          href="/assets/ALTHAFDEVELOPER.pdf"
+          href="assets/ALTHAFDEVELOPER.pdf"
           target="_blank"
           className="hidden relative lg:inline-block px-4 py-2 font-medium group"
         >
@@ -113,7 +113,7 @@ export default function Navbar() {
                 </motion.li>
               ))}
               <motion.a
-                href="/assets/ALTHAFDEVELOPER.pdf"
+                href="assets/ALTHAFDEVELOPER.pdf"
                 target="_blank"
                 className="relative inline-block px-4 py-2 font-semibold group"
                 whileHover={{ scale: 1.1 }}

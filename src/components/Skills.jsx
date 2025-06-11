@@ -27,7 +27,7 @@ export default function Skills() {
       period: "July 2024 - Present",
       description:
         "At DocMe Cloud Solutions, I work as a Jr software engineer focusing on full-stack development. My responsibilities include building and maintaining applications using PHP, React.js, MySQL, and PostgreSQL. I collaborate with cross-functional teams to deliver efficient, scalable solutions and actively contribute to debugging, optimization, and feature enhancements across both frontend and backend systems.",
-      logo: "/assets/docme.png",
+      logo: "assets/docme.png",
     },
   ]);
 
@@ -81,7 +81,7 @@ export default function Skills() {
           {experiences.map((exp, index) => (
             <motion.div
               key={exp.id}
-              className="bg-black p-5 border border-[#D4D4D8] rounded-md hover:bg-[#27272A] transition-all cursor-pointer"
+              className="bg-black p-5 border border-[#D4D4D8] rounded-md hover:bg-[#27272A] transition-all cursor-pointer "
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{
@@ -103,7 +103,7 @@ export default function Skills() {
                   {exp.period}
                 </span>
               </div>
-              <p className="text-[#D4D4D8] mt-6 text-sm/6 lg:text-base font-light">
+              <p className="text-[#D4D4D8] mt-6 text-sm/6 lg:text-base font-mono">
                 {exp.description}
               </p>
             </motion.div>
