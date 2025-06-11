@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { IoLogoLinkedin, IoLogoTwitter } from "react-icons/io5";
+import { IoLogoLinkedin, IoLogoWhatsapp } from "react-icons/io5";
 import { BiLogoGmail } from "react-icons/bi";
-import { BsGithub } from "react-icons/bs";
+import { BsInstagram } from "react-icons/bs";
 import { TypeAnimation } from "react-type-animation";
 
 export default function Home() {
@@ -33,9 +33,9 @@ export default function Home() {
             <motion.h2 variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
               Hello, <TypeAnimation
                 sequence={[
-                  'I am Sathish Kumar',
+                  'I am Althaf N',
                   1000,
-                  // 'I am a Web Developer',
+                  // 'I am a Full Stack Developer',
                   // 1000,
                   // 'I am a UI/UX Designer',
                   // 1000,
@@ -65,27 +65,35 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1 }}
           >
-            Passionate about technology, I specialize in Web Development and Web Designing. I’m focused on building innovative solutions and continuously expanding my skills. My goal is to grow as a developer and contribute to impactful projects in the tech industry.
+            I am passionate about technology and specialize in web development and web design. I am committed to creating innovative solutions while continually advancing my skills. My goal is to grow as a developer and make a significant impact on projects within the tech industry.
           </motion.p>
 
           <motion.div
-            className="flex items-center gap-x-5 mt-10 lg:mt-14"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 1 }}
-          >
-            {[BiLogoGmail, IoLogoLinkedin, IoLogoTwitter, BsGithub].map((Icon, index) => (
-              <motion.a
-                key={index}
-                href="#"
-                className="bg-white p-2 lg:p-3 rounded border-2 border-black"
-                whileHover={{ scale: 1.1, backgroundColor: "#000", color: "#fff" }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
-              </motion.a>
-            ))}
-          </motion.div>
+          className="flex items-center gap-x-5 mt-10 lg:mt-14"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 1 }}
+        >
+          {[
+            { Icon: BiLogoGmail, href: "mailto:althafnizam7632gmail.com" },
+            { Icon: IoLogoLinkedin, href: "https://www.linkedin.com/in/althaf-nizam-b27489260?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" },
+            { Icon: IoLogoWhatsapp, href: "https://wa.me/9633146330" },
+            { Icon: BsInstagram, href: "https://www.instagram.com/alth_fx" }
+          ].map(({ Icon, href }, index) => (
+            <motion.a
+              key={index}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white p-2 lg:p-3 rounded border-2 border-black"
+              whileHover={{ scale: 1.1, backgroundColor: "#000", color: "#fff" }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
+            </motion.a>
+          ))}
+        </motion.div>
+
         </motion.div>
 
         <motion.div

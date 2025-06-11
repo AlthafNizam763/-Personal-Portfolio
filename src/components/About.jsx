@@ -26,15 +26,15 @@ export default function About() {
         </h2>
 
         <p className="text-[#71717A] text-sm/6 lg:text-base mt-5 lg:mt-10">
-          I'm a passionate full-stack developer specializing in **React.js & Node.js**. I thrive on blending technical expertise with sleek UI/UX design to build high-performing, user-friendly applications.
+          I'm a passionate full-stack developer specializing in PHP and React.js. I enjoy turning ideas into efficient, user-focused applications by combining backend logic with sleek, responsive interfaces.
         </p>
 
         <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5">
-          My web development journey started in **2015**, and since then, I've continuously evolved, taking on new challenges and keeping up with the latest technologies. Today, I build **cutting-edge web applications** using **Next.js, TypeScript, NestJS, TailwindCSS, Supabase, and more**.
+          My development journey began in 2024, and since then, I’ve been focused on growing my skills and contributing to real-world projects. I currently work at DOCME Cloud Solutions, building and maintaining modern web applications using PHP, MySQL, PostgreSQL, JavaScript, and modern frameworks.
         </p>
 
         <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5">
-          Beyond coding, I enjoy sharing insights on **Twitter**, engaging with **Indie Hackers**, and following the journey of **early-stage startups**. Feel free to follow me on **Twitter** or check out my projects on **GitHub**.
+          Outside of coding, I enjoy hitting the gym, diving into gaming, and relaxing with a good movie. I'm always eager to learn, connect, and take on new challenges in the tech world.
         </p>
       </motion.div>
     </div>

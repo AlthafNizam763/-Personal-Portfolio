@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { BiLogoGmail } from 'react-icons/bi';
-import { BsGithub } from 'react-icons/bs';
-import { IoLogoLinkedin, IoLogoTwitter } from 'react-icons/io5';
+import { BsInstagram } from 'react-icons/bs';
+import { IoLogoLinkedin, IoLogoWhatsapp } from 'react-icons/io5';
 import { IoMdMail } from "react-icons/io";
 import { FaPhone } from "react-icons/fa6";
 
@@ -56,10 +56,17 @@ export default function Contact() {
               </motion.button>
 
               <div className='flex items-center gap-x-2 lg:gap-x-5'>
-                {[BiLogoGmail, IoLogoLinkedin, IoLogoTwitter, BsGithub].map((Icon, index) => (
+                {[
+                  { Icon: BiLogoGmail, href: "mailto:althafnizam763@gmail.com" },
+                  { Icon: IoLogoLinkedin, href: "https://www.linkedin.com/in/althaf-nizam-b27489260?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" },
+                  { Icon: IoLogoWhatsapp, href: "https://wa.me/9633146330" },
+                  { Icon: BsInstagram, href: "https://www.instagram.com/alth_fx" }
+                ].map(({ Icon, href }, index) => (
                   <motion.a
                     key={index}
-                    href="#"
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="bg-white p-2 lg:p-3 rounded border-2 border-black"
                     whileHover={{ scale: 1.1, backgroundColor: "#000", color: "#fff" }}
                     whileTap={{ scale: 0.9 }}
@@ -89,23 +96,23 @@ export default function Contact() {
             <motion.a
               whileHover={{ x: 5 }}
               className='flex items-center gap-2 group'
-              href="mailto:Youremail@gmail.com"
+              href="mailto: althafnizam763@gmail.com"
             >
               <span className='border-2 transition-all border-transparent group-hover:border-black rounded-full p-1'>
                 <IoMdMail className="w-4 h-4 lg:w-5 lg:h-5" />
               </span>
-              Youremail@gmail.com
+              althafnizam763@gmail.com
             </motion.a>
 
             <motion.a
               whileHover={{ x: 5 }}
               className='flex items-center gap-2 group'
-              href="tele:1234567890"
+              href="tele:9633146330"
             >
               <span className='border-2 transition-all border-transparent group-hover:border-black rounded-full p-[5px]'>
                 <FaPhone className="w-3 h-3 lg:w-4 lg:h-4" />
               </span>
-              1234567890
+              9633146330
             </motion.a>
           </div>
         </motion.div>

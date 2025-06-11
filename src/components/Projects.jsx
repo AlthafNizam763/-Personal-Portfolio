@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 const projects = [
   {
     id: 1,
-    title: "Crypto Screener Application",
-    description: "A powerful tool for tracking and analyzing cryptocurrency trends in real-time.",
-    image: "/assets/project1.png",
-    link: "#"
+    title: "Website for Zenith Academy",
+    description: "Discover an informative website designed to help you easily download the app and connect with him directly. Don't miss out on the opportunity to enhance your experience!",
+    image: "/assets/zenith.jpg",
+    link: "https://www.zenithacademy.in/"
   },
   {
     id: 2,
-    title: "Stock Market Dashboard",
-    description: "An interactive dashboard to monitor stock prices and market trends efficiently.",
-    image: "/assets/project1.png",
-    link: "#"
+    title: "Website for MoRe Experts",
+    description: "Discover everything you need to know about our company on this website, including various ways to get in touch with us. Don't hesitate to reach out—your inquiries and feedback matter to us!",
+    image: "/assets/more.jpg",
+    link: "https://althafnizam763.github.io/xpalico/"
   }
 ];
 
