@@ -1,0 +1,67 @@
+/* Shared style */
+.flying-gif {
+  position: fixed;
+  width: 80px;
+  height: auto;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.9;
+  transform-origin: center center;
+}
+
+/* Animations */
+@keyframes flyFromLeft {
+  0% { transform: translateX(-100vw) rotate(0deg); }
+  100% { transform: translateX(100vw) rotate(0deg); }
+}
+
+@keyframes flyFromRight {
+  0% { transform: translateX(100vw) scaleX(-1); }
+  100% { transform: translateX(-100vw) scaleX(-1); }
+}
+
+@keyframes flyFromTop {
+  0% { transform: translateY(-100vh) rotate(90deg); }
+  100% { transform: translateY(100vh) rotate(90deg); }
+}
+
+@keyframes flyFromBottom {
+  0% { transform: translateY(100vh) rotate(-90deg); }
+  100% { transform: translateY(-100vh) rotate(-90deg); }
+}
+
+@keyframes flyFromDiagonal {
+  0% { transform: translate(-100vw, 100vh) rotate(-45deg); }
+  100% { transform: translate(100vw, -100vh) rotate(-45deg); }
+}
+
+/* Assign directions */
+.direction-1 {
+  top: 40vh;
+  left: 0;
+  animation: flyFromLeft 12s linear infinite;
+}
+
+.direction-2 {
+  top: 10vh;
+  right: 0;
+  animation: flyFromRight 13s linear infinite;
+}
+
+.direction-3 {
+  top: 0;
+  left: 20vw;
+  animation: flyFromTop 14s linear infinite;
+}
+
+.direction-4 {
+  bottom: 0;
+  left: 60vw;
+  animation: flyFromBottom 15s linear infinite;
+}
+
+.direction-5 {
+  top: 0;
+  left: 0;
+  animation: flyFromDiagonal 16s linear infinite;
+}
