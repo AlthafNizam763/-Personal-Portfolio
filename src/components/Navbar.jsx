@@ -6,15 +6,29 @@ import { HiOutlineMenu, HiX } from "react-icons/hi";
 export default function Navbar() {
   const [hasShadow, setHasShadow] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      setHasShadow(window.scrollY > 0);
+      const currentScrollY = window.scrollY;
+
+      setHasShadow(currentScrollY > 0);
+
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        // Scrolling down
+        setShowNavbar(false);
+      } else {
+        // Scrolling up
+        setShowNavbar(true);
+      }
+
+      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [lastScrollY]);
 
   const scrollToSection = (id) => {
     const section = document.getElementById(id);
@@ -29,11 +43,13 @@ export default function Navbar() {
 
   return (
     <motion.nav
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed lg:px-28 px-5 top-0 left-0 w-full z-50 bg-white p-5 transition-shadow duration-300 ${hasShadow ? "shadow-md" : "shadow-none"
-        }`}
+      initial={{ y: 0, opacity: 1 }}
+      animate={{
+        y: showNavbar ? 0 : -100,
+        opacity: showNavbar ? 1 : 0.95,
+      }}
+      transition={{ duration: 0.4 }}
+      className={`fixed lg:px-28 px-5 top-0 left-0 w-full z-50 bg-white p-5 transition-shadow duration-300 ${hasShadow ? "shadow-md" : "shadow-none"}`}
     >
       <div className="container mx-auto flex justify-between items-center">
         <motion.img

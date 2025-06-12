@@ -35,7 +35,7 @@ This is a personal portfolio website built using Vite+React, Tailwind CSS, and F
    The app will be available at `http://localhost:3000/`.
 
 ## Demo
-Check out the live demo of the portfolio website: [Live Demo](https://.app/)
+Check out the live demo of the portfolio website: [Live Demo](https://althafnizam763.github.io/-Personal-Portfolio/)
 
 ## Deployment
 To deploy the portfolio website, you can use platforms like:
@@ -49,7 +49,7 @@ If you’d like to contribute or improve this project, feel free to fork the rep
 ## Contact
 If you have any questions or suggestions, feel free to reach out via:
 - **Email:** althafnizam763@gmail.com
-- **LinkedIn:** [Your LinkedIn Profile]("https://www.linkedin.com/in/althaf-nizam-b27489260?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app")
+- **LinkedIn:** [LinkedIn Profile](https://www.linkedin.com/in/althaf-nizam-b27489260?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
 
 ---
 Made with ❤️ by xpalico.

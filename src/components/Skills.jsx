@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FaJs, FaReact, FaPhp, FaJava, FaHtml5, FaCss3 } from "react-icons/fa";
 import { BiLogoPostgresql } from "react-icons/bi";
 import { RiNextjsFill,RiTailwindCssFill,RiBootstrapFill } from "react-icons/ri";
+import { SiMysql } from "react-icons/si";
 // import { CgFigma } from "react-icons/cg";
 
 export default function Skills() {
@@ -13,10 +14,11 @@ export default function Skills() {
     { id: 4, name: "React", icon: <FaReact size={50} /> },
     { id: 5, name: "Php", icon: <FaPhp size={50} /> },
     { id: 6, name: "Java", icon: <FaJava size={50} /> },
-    { id: 7, name: "Postgresql", icon: <BiLogoPostgresql size={50} /> },
-    { id: 8, name: "Next.js", icon: <RiNextjsFill size={50} /> },
-    { id: 9, name: "Tailwind", icon: <RiTailwindCssFill size={50} /> },
-    { id: 10, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
+    { id: 7, name: "Mysql", icon: <SiMysql size={50} /> },
+    { id: 8, name: "Postgresql", icon: <BiLogoPostgresql size={50} /> },
+    { id: 9, name: "Next.js", icon: <RiNextjsFill size={50} /> },
+    { id: 10, name: "Tailwind", icon: <RiTailwindCssFill size={50} /> },
+    { id: 11, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
   ]);
 
   const [experiences] = useState([
