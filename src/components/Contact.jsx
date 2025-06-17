@@ -1,14 +1,24 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { BiLogoGmail } from 'react-icons/bi';
 import { BsInstagram } from 'react-icons/bs';
 import { IoLogoLinkedin, IoLogoWhatsapp } from 'react-icons/io5';
 import { IoMdMail } from "react-icons/io";
 import { FaPhone } from "react-icons/fa6";
+import ErrorPopup from '../utils/ErrorPopup'; 
 
 export default function Contact() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
+
+  const [showError, setShowError] = useState(false);
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+
+    // Simulate a 500 error popup
+    setShowError(true);
+  };
 
   return (
     <motion.div
@@ -35,7 +45,7 @@ export default function Contact() {
           transition={{ duration: 0.8 }}
           className='lg:w-[40%]'
         >
-          <form className='w-full space-y-3 lg:space-y-5'>
+          <form className='w-full space-y-3 lg:space-y-5' onSubmit={handleFormSubmit}>
             <input className='border-2 px-5 py-3 border-black rounded placeholder:text-[#71717A] text-sm w-full' type="text" placeholder='Your name' required />
             <input className='border-2 px-5 py-3 border-black rounded placeholder:text-[#71717A] text-sm w-full' type="email" placeholder='Email' required />
             <input className='border-2 px-5 py-3 border-black rounded placeholder:text-[#71717A] text-sm w-full' type="text" placeholder='Your website (If exists)' />
@@ -58,7 +68,7 @@ export default function Contact() {
               <div className='flex items-center gap-x-2 lg:gap-x-5'>
                 {[
                   { Icon: BiLogoGmail, href: "mailto:althafnizam763@gmail.com" },
-                  { Icon: IoLogoLinkedin, href: "https://www.linkedin.com/in/althaf-nizam-b27489260?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" },
+                  { Icon: IoLogoLinkedin, href: "https://www.linkedin.com/in/althaf-nizam-b27489260" },
                   { Icon: IoLogoWhatsapp, href: "https://wa.me/9633146330" },
                   { Icon: BsInstagram, href: "https://www.instagram.com/alth_fx" }
                 ].map(({ Icon, href }, index) => (
@@ -96,7 +106,7 @@ export default function Contact() {
             <motion.a
               whileHover={{ x: 5 }}
               className='flex items-center gap-2 group'
-              href="mailto: althafnizam763@gmail.com"
+              href="mailto:althafnizam763@gmail.com"
             >
               <span className='border-2 transition-all border-transparent group-hover:border-black rounded-full p-1'>
                 <IoMdMail className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -107,7 +117,7 @@ export default function Contact() {
             <motion.a
               whileHover={{ x: 5 }}
               className='flex items-center gap-2 group'
-              href="tele:9633146330"
+              href="tel:9633146330"
             >
               <span className='border-2 transition-all border-transparent group-hover:border-black rounded-full p-[5px]'>
                 <FaPhone className="w-3 h-3 lg:w-4 lg:h-4" />
@@ -117,6 +127,13 @@ export default function Contact() {
           </div>
         </motion.div>
       </div>
+
+      {showError && (
+        <ErrorPopup
+          message="I apologize, but there seems to be an issue."
+          onClose={() => setShowError(false)}
+        />
+      )}
     </motion.div>
   );
 }
