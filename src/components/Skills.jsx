@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { FaJs, FaReact, FaPhp, FaJava, FaHtml5, FaCss3 } from "react-icons/fa";
 import { BiLogoPostgresql } from "react-icons/bi";
 import { RiNextjsFill,RiTailwindCssFill,RiBootstrapFill } from "react-icons/ri";
-import { SiMysql,SiCodeigniter,SiJquery,SiTypescript } from "react-icons/si";
+import { SiMysql,SiCodeigniter,SiJquery,SiTypescript,SiRedux } from "react-icons/si";
 // import { CgFigma } from "react-icons/cg";
 
 export default function Skills() {
@@ -21,7 +21,8 @@ export default function Skills() {
     { id: 11, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
     { id: 12, name: "Codeigniter", icon: <SiCodeigniter size={50} /> },
     { id: 13, name: "jQuery", icon: <SiJquery size={50} /> },
-    { id: 14, name: "Typescript", icon: <SiTypescript size={50} /> }
+    { id: 14, name: "Typescript", icon: <SiTypescript size={50} /> },
+    { id: 15, name: "Redux", icon: <SiRedux size={50} /> }
   ]);
 
   const [experiences] = useState([
