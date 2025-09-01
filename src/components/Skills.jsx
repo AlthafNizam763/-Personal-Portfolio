@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FaJs, FaReact, FaPhp, FaJava, FaHtml5, FaCss3, FaLaravel } from "react-icons/fa";
+import { FaJs, FaReact, FaPhp, FaHtml5, FaCss3, FaLaravel } from "react-icons/fa";
 import { BiLogoPostgresql } from "react-icons/bi";
 import { RiNextjsFill,RiTailwindCssFill,RiBootstrapFill } from "react-icons/ri";
 import { SiMysql,SiCodeigniter,SiJquery,SiTypescript,SiRedux } from "react-icons/si";
@@ -13,27 +13,26 @@ export default function Skills() {
     { id: 3, name: "JavaScript", icon: <FaJs size={50} /> },
     { id: 4, name: "React", icon: <FaReact size={50} /> },
     { id: 5, name: "Php", icon: <FaPhp size={50} /> },
-    { id: 6, name: "Java", icon: <FaJava size={50} /> },
-    { id: 7, name: "Mysql", icon: <SiMysql size={50} /> },
-    { id: 8, name: "Postgresql", icon: <BiLogoPostgresql size={50} /> },
-    { id: 9, name: "Next.js", icon: <RiNextjsFill size={50} /> },
-    { id: 10, name: "Tailwind", icon: <RiTailwindCssFill size={50} /> },
-    { id: 11, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
-    { id: 12, name: "Codeigniter", icon: <SiCodeigniter size={50} /> },
-    { id: 13, name: "jQuery", icon: <SiJquery size={50} /> },
-    { id: 14, name: "Typescript", icon: <SiTypescript size={50} /> },
-    { id: 15, name: "Redux", icon: <SiRedux size={50} /> },
-    { id: 16, name: "Laravel", icon: <FaLaravel size={50} /> }
+    { id: 6, name: "Mysql", icon: <SiMysql size={50} /> },
+    { id: 7, name: "Postgresql", icon: <BiLogoPostgresql size={50} /> },
+    { id: 8, name: "Next.js", icon: <RiNextjsFill size={50} /> },
+    { id: 9, name: "Tailwind", icon: <RiTailwindCssFill size={50} /> },
+    { id: 10, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
+    { id: 11, name: "Codeigniter", icon: <SiCodeigniter size={50} /> },
+    { id: 12, name: "jQuery", icon: <SiJquery size={50} /> },
+    { id: 13, name: "Typescript", icon: <SiTypescript size={50} /> },
+    { id: 14, name: "Redux", icon: <SiRedux size={50} /> },
+    { id: 15, name: "Laravel", icon: <FaLaravel size={50} /> }
   ]);
 
   const [experiences] = useState([
     {
       id: 1,
       company: "DOCME CLOUD SOLUTIONS",
-      role: "Jr Software Engineer",
+      role: "Software Engineer",
       period: "July 2024 - Present",
       description:
-        "At DocMe Cloud Solutions, I work as a Jr software engineer focusing on full-stack development. My responsibilities include building and maintaining applications using PHP, React.js, MySQL, and PostgreSQL. I collaborate with cross-functional teams to deliver efficient, scalable solutions and actively contribute to debugging, optimization, and feature enhancements across both frontend and backend systems.",
+        "At DocMe Cloud Solutions, I work as a software engineer focusing on full-stack development. My responsibilities include building and maintaining applications using PHP, React.js, MySQL, and PostgreSQL. I collaborate with cross-functional teams to deliver efficient, scalable solutions and actively contribute to debugging, optimization, and feature enhancements across both frontend and backend systems.",
       logo: "assets/docme.png",
     },
   ]);
