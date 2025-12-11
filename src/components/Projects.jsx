@@ -18,6 +18,14 @@ const projects = [
       "Loyaltri is an all-in-one HRMS platform built to simplify and automate everyday HR tasks like hiring, onboarding, payroll, attendance, and communication. Designed with real HR teams in mind, Loyaltri helps businesses boost efficiency, reduce manual work, and focus on growth. Explore the platform to see how we’ve made HR smarter, faster, and stress-free.",
     video: "assets/Loyaltri.mp4",
     link: "https://www.loyaltri.com/"
+  },
+  {
+    id: 3,
+    title: "Voice of the Voiceless",
+    description:
+      "A platform dedicated to amplifying the voices of those often unheard, focusing on social issues and community empowerment.",
+    image: "assets/voiceofthevoiceless.jpg", // Assuming an image asset exists
+    link: "https://www.voiceofthevoiceless.co.in/"
   }
 ];
 
@@ -32,9 +40,8 @@ export default function Projects() {
         {projects.map((project, index) => (
           <motion.div
             key={project.id}
-            className={`flex justify-between items-center flex-col ${
-              index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-            }`}
+            className={`flex justify-between items-center flex-col ${index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
+              }`}
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", stiffness: 80, damping: 10, delay: index * 0.2 }}
