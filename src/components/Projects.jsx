@@ -24,7 +24,7 @@ const projects = [
     title: "Voice of the Voiceless",
     description:
       "A platform dedicated to amplifying the voices of those often unheard, focusing on social issues and community empowerment.",
-    image: "assets/voiceofthevoiceless.jpg", 
+    image: "assets/Voice.png", 
     link: "https://www.voiceofthevoiceless.co.in/"
   }
 ];
