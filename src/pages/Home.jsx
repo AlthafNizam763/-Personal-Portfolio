@@ -54,9 +54,9 @@ export default function Home() {
                 Developer
               </span>
             </motion.h2>
-            <motion.h2 variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
+            {/* <motion.h2 variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
               Based In <span className="font-extrabold">Kerala.</span>
-            </motion.h2>
+            </motion.h2> */}
           </motion.div>
 
           <motion.p
@@ -65,8 +65,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1 }}
           >
-            I am passionate about technology and specialize in web development and web design. I am committed to creating innovative solutions while continually advancing my skills. My goal is to grow as a developer and make a significant impact on projects within the tech industry.
-          </motion.p>
+          Passionate Full Stack Developer specializing in Laravel, Node.js, React.js, and Next.js. Dedicated to building scalable, user-focused web applications, solving real-world problems, and continuously learning emerging technologies to deliver impactful solutions.          </motion.p>
 
           <motion.div
           className="flex items-center gap-x-5 mt-10 lg:mt-14"

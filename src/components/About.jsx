@@ -25,17 +25,17 @@ export default function About() {
           About <span className="font-extrabold">Me</span>
         </h2>
 
-        <p className="text-[#71717A] text-sm/6 lg:text-base mt-5 lg:mt-10 font-mono">
-          I'm a passionate full-stack developer specializing in PHP and React.js. I enjoy turning ideas into efficient, user-focused applications by combining backend logic with sleek, responsive interfaces.
-        </p>
+      <p className="text-[#71717A] text-sm/6 lg:text-base mt-5 lg:mt-10 font-mono">
+        I'm a passionate <span className="font-semibold">Full Stack Developer</span> with 2 years of experience building scalable, secure, and user-centric web applications. I specialize in <span className="font-semibold">Laravel, CodeIgniter, Node.js, React.js, and Next.js</span>, creating robust backend systems and modern, responsive user interfaces.
+      </p>
 
-        <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5 font-mono">
-          My development journey began in 2024, and since then, I’ve been focused on growing my skills and contributing to real-world projects. I currently work at DOCME Cloud Solutions, building and maintaining modern web applications using PHP, MySQL, PostgreSQL, JavaScript, and modern frameworks.
-        </p>
+      <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5 font-mono">
+        Currently, I work at <span className="font-semibold">DOCME Cloud Solutions</span>, where I contribute to enterprise-grade HRMS solutions by developing RESTful APIs, backend services, and scalable web applications using <span className="font-semibold">PHP, MySQL, PostgreSQL, MongoDB, JavaScript, and TypeScript</span>. I'm passionate about writing clean, maintainable code and delivering software that creates real business value.
+      </p>
 
-        <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5 font-mono">
-          Outside of coding, I enjoy hitting the gym, diving into gaming, and relaxing with a good movie. I'm always eager to learn, connect, and take on new challenges in the tech world.
-        </p>
+      <p className="text-[#71717A] text-sm/6 lg:text-base mt-3 lg:mt-5 font-mono">
+        Beyond my professional work, I'm continuously expanding my expertise by learning <span className="font-semibold">Flutter</span> for cross-platform mobile development while staying up to date with modern web technologies. Outside of coding, I enjoy working out at the gym, gaming, watching movies, and exploring new technologies. I'm always excited to learn, collaborate, and take on challenging projects that help me grow as a developer.
+      </p>
       </motion.div>
     </div>
   );

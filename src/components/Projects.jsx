@@ -26,6 +26,14 @@ const projects = [
       "A platform dedicated to amplifying the voices of those often unheard, focusing on social issues and community empowerment.",
     image: "assets/Voice.png", 
     link: "https://www.voiceofthevoiceless.co.in/"
+  },
+  {
+    id: 4,
+    title: "Research Academy For Creative Excellence",
+    description:
+      "Developed a WordPress website for a social organization to showcase its mission, promote community initiatives, share updates, and provide an accessible platform for engaging with members and the public.",
+    image: "assets/Race.png", 
+    link: "https://raceindia.org/"
   }
 ];
 

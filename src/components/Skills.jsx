@@ -1,28 +1,78 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FaJs, FaReact, FaPhp, FaHtml5, FaCss3, FaLaravel,FaNodeJs } from "react-icons/fa";
+import { FaJs, FaReact, FaPhp, FaHtml5, FaCss3, FaLaravel, FaNodeJs, FaGitAlt, FaGithub, FaFigma } from "react-icons/fa";
 import { BiLogoPostgresql } from "react-icons/bi";
-import { RiNextjsFill,RiTailwindCssFill,RiBootstrapFill } from "react-icons/ri";
-import { SiMysql,SiCodeigniter,SiJquery,SiTypescript } from "react-icons/si";
-// import { CgFigma } from "react-icons/cg";
+import { RiNextjsFill, RiTailwindCssFill, RiBootstrapFill } from "react-icons/ri";
+import { SiMysql, SiCodeigniter, SiJquery, SiTypescript, SiRedux, SiExpress, SiMongodb, SiPostman } from "react-icons/si";
+import { TbApi, TbKey, TbLock, TbShieldLock, TbSparkles, TbDevices, TbBrandVscode } from "react-icons/tb";
 
 export default function Skills() {
-  const [skills] = useState([
-    { id: 1, name: "HTML", icon: <FaHtml5 size={50} /> },
-    { id: 2, name: "CSS", icon: <FaCss3 size={50} /> },
-    { id: 3, name: "JavaScript", icon: <FaJs size={50} /> },
-    { id: 4, name: "React", icon: <FaReact size={50} /> },
-    { id: 5, name: "Php", icon: <FaPhp size={50} /> },
-    { id: 6, name: "Mysql", icon: <SiMysql size={50} /> },
-    { id: 7, name: "Postgresql", icon: <BiLogoPostgresql size={50} /> },
-    { id: 8, name: "Next.js", icon: <RiNextjsFill size={50} /> },
-    { id: 9, name: "Tailwind", icon: <RiTailwindCssFill size={50} /> },
-    { id: 10, name: "Bootstrap", icon: <RiBootstrapFill size={50} /> },
-    { id: 11, name: "Codeigniter", icon: <SiCodeigniter size={50} /> },
-    { id: 12, name: "jQuery", icon: <SiJquery size={50} /> },
-    { id: 13, name: "Typescript", icon: <SiTypescript size={50} /> },
-    { id: 14, name: "Node.js", icon: <FaNodeJs size={50} /> },
-    { id: 15, name: "Laravel", icon: <FaLaravel size={50} /> }
+  const [skillGroups] = useState([
+    {
+      category: "Languages",
+      skills: [
+        { name: "PHP", icon: <FaPhp size={30} /> },
+        { name: "JavaScript (ES6+)", icon: <FaJs size={30} /> },
+        { name: "TypeScript", icon: <SiTypescript size={30} /> },
+        { name: "HTML5", icon: <FaHtml5 size={30} /> },
+        { name: "CSS3", icon: <FaCss3 size={30} /> },
+      ],
+    },
+    {
+      category: "Frontend",
+      skills: [
+        { name: "React.js", icon: <FaReact size={30} /> },
+        { name: "Next.js", icon: <RiNextjsFill size={30} /> },
+        { name: "Bootstrap", icon: <RiBootstrapFill size={30} /> },
+        { name: "Tailwind CSS", icon: <RiTailwindCssFill size={30} /> },
+        { name: "jQuery", icon: <SiJquery size={30} /> },
+        { name: "Redux", icon: <SiRedux size={30} /> },
+      ],
+    },
+    {
+      category: "Backend",
+      skills: [
+        { name: "Laravel", icon: <FaLaravel size={30} /> },
+        { name: "CodeIgniter 3", icon: <SiCodeigniter size={30} /> },
+        { name: "CodeIgniter 4", icon: <SiCodeigniter size={30} /> },
+        { name: "Node.js", icon: <FaNodeJs size={30} /> },
+        { name: "Express.js", icon: <SiExpress size={30} /> },
+      ],
+    },
+    {
+      category: "Database",
+      skills: [
+        { name: "MySQL", icon: <SiMysql size={30} /> },
+        { name: "PostgreSQL", icon: <BiLogoPostgresql size={30} /> },
+        { name: "MongoDB", icon: <SiMongodb size={30} /> },
+      ],
+    },
+    {
+      category: "API & Authentication",
+      skills: [
+        { name: "REST APIs", icon: <TbApi size={30} /> },
+        { name: "JWT Authentication", icon: <TbKey size={30} /> },
+        { name: "Authentication & Authorization", icon: <TbLock size={30} /> },
+        { name: "Role-Based Access Control (RBAC)", icon: <TbShieldLock size={30} /> },
+      ],
+    },
+    {
+      category: "Tools",
+      skills: [
+        { name: "Git", icon: <FaGitAlt size={30} /> },
+        { name: "GitHub", icon: <FaGithub size={30} /> },
+        { name: "Postman", icon: <SiPostman size={30} /> },
+        { name: "VS Code", icon: <TbBrandVscode size={30} /> },
+        { name: "Figma", icon: <FaFigma size={30} /> },
+      ],
+    },
+    {
+      category: "Others",
+      skills: [
+        { name: "AI Prompt Engineering", icon: <TbSparkles size={30} /> },
+        { name: "Responsive Web Design", icon: <TbDevices size={30} /> },
+      ],
+    },
   ]);
 
   const [experiences] = useState([
@@ -30,9 +80,9 @@ export default function Skills() {
       id: 1,
       company: "DOCME CLOUD SOLUTIONS",
       role: "Software Engineer",
-      period: "July 2024 - Present",
+      period: "July 3024 - Present",
       description:
-        "At DocMe Cloud Solutions, I work as a software engineer focusing on full-stack development. My responsibilities include building and maintaining applications using PHP, React.js, MySQL, and PostgreSQL. I collaborate with cross-functional teams to deliver efficient, scalable solutions and actively contribute to debugging, optimization, and feature enhancements across both frontend and backend systems.",
+        "Working as a Software Engineer at DocMe Cloud Solutions, I specialize in building scalable full-stack applications using Laravel, CodeIgniter, Node.js, React.js, Next.js, MySQL, PostgreSQL, and MongoDB. My role involves developing RESTful APIs, optimizing application performance, resolving production issues, and delivering secure, high-performance solutions while collaborating with cross-functional teams in an Agile development environment.",
       logo: "assets/docme.png",
     },
   ]);
@@ -43,7 +93,7 @@ export default function Skills() {
 
         <motion.h2
           className="text-2xl lg:text-4xl text-center"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
@@ -51,19 +101,39 @@ export default function Skills() {
           My <span className="font-extrabold">Skills</span>
         </motion.h2>
 
-        {/* Skill Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5 text-lg font-bold mt-7 lg:mt-16 w-full place-items-center gap-y-6 lg:gap-y-12">
-          {skills.map((skill) => (
+        {/* Categorized Skills */}
+        <div className="mt-7 lg:mt-16 space-y-8 lg:space-y-10">
+          {skillGroups.map((group, groupIndex) => (
             <motion.div
-              key={skill.id}
-              className="bg-white border-2 hover:bg-black hover:text-white transition-all cursor-pointer border-black rounded p-3 h-36 w-36 lg:h-44 lg:w-44 flex flex-col items-center justify-center gap-5"
-              initial={{ opacity: 0, y: 5 }}
+              key={group.category}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut", delay: skill.id * 0.1 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: groupIndex * 0.05 }}
               viewport={{ once: true }}
             >
-              {skill.icon}
-              <p>{skill.name}</p>
+              <div className="flex items-center gap-4 mb-4 lg:mb-6">
+                <h3 className="text-lg lg:text-2xl font-extrabold whitespace-nowrap">
+                  {group.category}
+                </h3>
+                <span className="h-[2px] w-full bg-black/10" />
+              </div>
+
+              <div className="flex flex-wrap gap-3 lg:gap-4">
+                {group.skills.map((skill, index) => (
+                  <motion.div
+                    key={skill.name}
+                    className="flex items-center gap-2 border-2 border-black rounded px-3 py-2 lg:px-4 lg:py-2.5 font-semibold text-sm lg:text-base hover:bg-black hover:text-white transition-all cursor-pointer"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.04 }}
+                    viewport={{ once: true }}
+                    whileHover={{ y: -3 }}
+                  >
+                    {skill.icon}
+                    <span>{skill.name}</span>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -74,7 +144,7 @@ export default function Skills() {
       <div className="bg-black w-full my-8 py-8 lg:my-16 lg:py-16">
         <motion.h2
           className="text-2xl lg:text-4xl text-center text-white"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
@@ -88,7 +158,7 @@ export default function Skills() {
             <motion.div
               key={exp.id}
               className="bg-black p-5 border border-[#D4D4D8] rounded-md hover:bg-[#27272A] transition-all cursor-pointer "
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{
                 type: "spring",
