@@ -2,8 +2,10 @@ import { requireSession } from '@/lib/auth'
 import { fail, ok, serverError, unauthorized } from '@/lib/api'
 import {
   MAX_UPLOAD_BYTES,
+  UploadBackendError,
   storageBackend,
   storeFile,
+  uploadBackendStatus,
   validateUpload,
   deleteFile,
   type UploadKind,
@@ -16,6 +18,16 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const KINDS: UploadKind[] = ['image', 'document', 'video']
+
+/**
+ * GET /api/admin/upload
+ * Reports whether uploads can succeed here, so the admin panel can warn about a
+ * missing storage backend before anyone picks a file.
+ */
+export async function GET() {
+  if (!(await requireSession())) return unauthorized()
+  return ok({ ...uploadBackendStatus(), maxBytes: MAX_UPLOAD_BYTES })
+}
 
 /**
  * POST /api/admin/upload
@@ -58,6 +70,13 @@ export async function POST(req: Request) {
       backend: storageBackend(),
     })
   } catch (err) {
+    // A misconfigured or failing storage backend is the admin's to fix, so the
+    // reason travels to the toast instead of becoming "Something went wrong".
+    if (err instanceof UploadBackendError) {
+      console.error('[upload]', err.message)
+      return fail(err.message, 503)
+    }
+
     // Vercel rejects request bodies over its platform limit before we see them.
     const message = err instanceof Error ? err.message : ''
     if (message.includes('Body exceeded') || message.includes('413')) {

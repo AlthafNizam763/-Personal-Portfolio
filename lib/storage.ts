@@ -2,6 +2,16 @@ import { put, del } from '@vercel/blob'
 import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
+import {
+  MAX_UPLOAD_BYTES,
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_DOC_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  allowedTypesFor,
+  validateUpload,
+  type UploadKind,
+  type UploadValidationError,
+} from './upload-limits'
 
 /**
  * Upload adapter with two backends:
@@ -12,24 +22,38 @@ import path from 'node:path'
  *    is git-ignored.
  *
  * Both return a URL that can be dropped straight into `src`.
+ *
+ * The two backends are not interchangeable: disk writes are impossible on a
+ * read-only host, so choosing that fallback there is a configuration fault, not
+ * a fallback. `storeFile` says so explicitly rather than letting the write fail
+ * with an EROFS deep inside `fs`.
  */
 
-export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024 // 8 MB
+export {
+  MAX_UPLOAD_BYTES,
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_DOC_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  allowedTypesFor,
+  validateUpload,
+}
+export type { UploadKind, UploadValidationError }
 
-export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/svg+xml',
-  'image/avif',
-] as const
+/**
+ * Raised when no upload backend can accept the file: the deployment has none
+ * configured, or the configured one rejected the write. The message is written
+ * for the admin who sees it in a toast and names the fix, so the upload route
+ * forwards it verbatim instead of collapsing it into "Something went wrong".
+ */
+export class UploadBackendError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UploadBackendError'
+  }
+}
 
-export const ALLOWED_DOC_TYPES = ['application/pdf'] as const
-
-export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'] as const
-
-export type UploadKind = 'image' | 'document' | 'video'
+/** Every Vercel Blob read-write token carries this prefix. */
+const BLOB_TOKEN_PREFIX = 'vercel_blob_rw_'
 
 const EXTENSION_BY_TYPE: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -43,15 +67,28 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   'video/webm': 'webm',
 }
 
-export function allowedTypesFor(kind: UploadKind): readonly string[] {
-  if (kind === 'document') return ALLOWED_DOC_TYPES
-  if (kind === 'video') return ALLOWED_VIDEO_TYPES
-  return ALLOWED_IMAGE_TYPES
+/**
+ * An env var that exists but holds an empty string — the shape `.env.example`
+ * ships and the one a copied-into-the-dashboard value usually has — means "not
+ * configured", not "configured with nothing".
+ */
+function blobToken(): string | null {
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim()
+  return token ? token : null
 }
 
 function isBlobConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+  return blobToken() !== null
 }
+
+/** True on hosts whose application filesystem is read-only at runtime. */
+function isReadOnlyFilesystem(): boolean {
+  return Boolean(process.env.VERCEL)
+}
+
+const BLOB_SETUP_HINT =
+  'Create one in the Vercel dashboard under Storage → Blob and connect it to this project — ' +
+  'BLOB_READ_WRITE_TOKEN is then injected automatically — then redeploy.'
 
 /** `my Photo (2).PNG` -> `my-photo-2` */
 function slugifyBaseName(name: string): string {
@@ -72,31 +109,6 @@ export interface StoredFile {
   contentType: string
 }
 
-export interface UploadValidationError {
-  error: string
-}
-
-export function validateUpload(
-  file: File,
-  kind: UploadKind
-): UploadValidationError | null {
-  const allowed = allowedTypesFor(kind)
-  if (!allowed.includes(file.type)) {
-    return {
-      error: `Unsupported file type "${file.type || 'unknown'}". Allowed: ${allowed.join(', ')}.`,
-    }
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return {
-      error: `File is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${
-        MAX_UPLOAD_BYTES / 1024 / 1024
-      } MB.`,
-    }
-  }
-  if (file.size === 0) return { error: 'File is empty.' }
-  return null
-}
-
 /**
  * @param folder logical grouping, e.g. "projects" or "certifications"
  */
@@ -108,30 +120,61 @@ export async function storeFile(file: File, folder: string): Promise<StoredFile>
   const filename = `${slugifyBaseName(file.name)}-${randomBytes(6).toString('hex')}.${ext}`
   const pathname = `uploads/${safeFolder}/${filename}`
 
-  if (isBlobConfigured()) {
-    const blob = await put(pathname, file, {
-      access: 'public',
-      contentType: file.type,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-      // Our own suffix already guarantees uniqueness; disabling Vercel's keeps
-      // the stored URL predictable.
-      addRandomSuffix: false,
-    })
-    return {
-      url: blob.url,
-      pathname: blob.pathname,
-      size: file.size,
-      contentType: file.type,
+  const token = blobToken()
+
+  if (token) {
+    // A placeholder pasted into the dashboard reaches Blob as a real request
+    // and comes back as an opaque failure, so reject it on sight instead.
+    if (!token.startsWith(BLOB_TOKEN_PREFIX)) {
+      throw new UploadBackendError(
+        `BLOB_READ_WRITE_TOKEN is set but is not a Vercel Blob token (it should start with "${BLOB_TOKEN_PREFIX}"). ${BLOB_SETUP_HINT}`
+      )
+    }
+
+    try {
+      const blob = await put(pathname, file, {
+        access: 'public',
+        contentType: file.type,
+        token,
+        // Our own suffix already guarantees uniqueness; disabling Vercel's keeps
+        // the stored URL predictable.
+        addRandomSuffix: false,
+      })
+      return {
+        url: blob.url,
+        pathname: blob.pathname,
+        size: file.size,
+        contentType: file.type,
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err)
+      throw new UploadBackendError(
+        `Vercel Blob rejected the upload: ${detail} Check that the Blob store still exists and is connected to this project.`
+      )
     }
   }
 
   // ---- local disk fallback ----
+  // Only viable where the app can write to its own directory. On Vercel it
+  // never is, and silently trying is what turns a missing Blob store into an
+  // unexplained 500.
+  if (isReadOnlyFilesystem()) {
+    throw new UploadBackendError(
+      `Uploads have no storage configured on this deployment. Vercel's filesystem is read-only, so a Vercel Blob store is required. ${BLOB_SETUP_HINT}`
+    )
+  }
+
   const publicDir = path.join(process.cwd(), 'public')
   const targetDir = path.join(publicDir, 'uploads', safeFolder)
-  await mkdir(targetDir, { recursive: true })
 
-  const buffer = Buffer.from(await file.arrayBuffer())
-  await writeFile(path.join(targetDir, filename), buffer)
+  try {
+    await mkdir(targetDir, { recursive: true })
+    const buffer = Buffer.from(await file.arrayBuffer())
+    await writeFile(path.join(targetDir, filename), buffer)
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err)
+    throw new UploadBackendError(`Could not write the file to public/uploads: ${detail}`)
+  }
 
   return {
     url: `/${pathname}`,
@@ -150,8 +193,9 @@ export async function deleteFile(url: string): Promise<void> {
 
   try {
     if (url.startsWith('http')) {
-      if (isBlobConfigured() && url.includes('.public.blob.vercel-storage.com')) {
-        await del(url, { token: process.env.BLOB_READ_WRITE_TOKEN })
+      const token = blobToken()
+      if (token && url.includes('.public.blob.vercel-storage.com')) {
+        await del(url, { token })
       }
       return
     }
@@ -172,4 +216,32 @@ export async function deleteFile(url: string): Promise<void> {
 
 export function storageBackend(): 'vercel-blob' | 'local-disk' {
   return isBlobConfigured() ? 'vercel-blob' : 'local-disk'
+}
+
+/**
+ * Whether uploads can succeed at all in this environment. The admin panel shows
+ * the reason up front rather than after a failed upload.
+ */
+export function uploadBackendStatus(): { ready: boolean; backend: string; reason?: string } {
+  const token = blobToken()
+
+  if (token) {
+    return token.startsWith(BLOB_TOKEN_PREFIX)
+      ? { ready: true, backend: 'vercel-blob' }
+      : {
+          ready: false,
+          backend: 'vercel-blob',
+          reason: `BLOB_READ_WRITE_TOKEN is not a Vercel Blob token (it should start with "${BLOB_TOKEN_PREFIX}"). ${BLOB_SETUP_HINT}`,
+        }
+  }
+
+  if (isReadOnlyFilesystem()) {
+    return {
+      ready: false,
+      backend: 'none',
+      reason: `Uploads have no storage configured on this deployment. Vercel's filesystem is read-only, so a Vercel Blob store is required. ${BLOB_SETUP_HINT}`,
+    }
+  }
+
+  return { ready: true, backend: 'local-disk' }
 }

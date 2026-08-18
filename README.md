@@ -59,9 +59,12 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 1. **Database** — create a MongoDB Atlas cluster. Under *Network Access*, allow `0.0.0.0/0`
    (Vercel's IPs are dynamic) or use Atlas's Vercel integration.
-2. **Blob storage** — in the Vercel project, *Storage → Create → Blob*. Vercel injects
-   `BLOB_READ_WRITE_TOKEN` automatically. Without it, uploads fall back to the filesystem, which is
-   read-only on Vercel.
+2. **Blob storage (required for uploads)** — in the Vercel project, *Storage → Create → Blob*, and
+   connect the store to the project. Vercel injects `BLOB_READ_WRITE_TOKEN` automatically — do not
+   add that variable by hand, and remove any placeholder copied from `.env.example`, or the real
+   token cannot be injected. Without a working store the admin's upload endpoint answers `503` with
+   the reason, since Vercel's filesystem is read-only and the local-disk fallback cannot run there.
+   Verify with `vercel blob list-stores`.
 3. **Environment variables** — add `MONGODB_URI`, `AUTH_SECRET` and `NEXT_PUBLIC_SITE_URL`
    (your real domain) for Production, Preview and Development.
 4. **Deploy**, then seed once against the production database:
@@ -143,8 +146,10 @@ The admin CRUD is data-driven — there are no per-resource route files:
   previously issued cookie.
 - Login is rate-limited per IP+email; the contact form per IP. Both are in-memory, so on serverless
   they only constrain a single warm container — put a WAF in front if you need hard guarantees.
-- Uploads are restricted by MIME type and capped at 8 MB. The local-disk handler refuses any path
-  that escapes `public/uploads`.
+- Uploads are restricted by MIME type and capped at 4 MB — Vercel rejects a serverless request body
+  over 4.5 MB before the handler runs, so the app's own limit stays below that ceiling and a file
+  that uploads locally also uploads in production. The local-disk handler refuses any path that
+  escapes `public/uploads`.
 - The `?next=` login parameter only accepts in-app `/admin` paths, so it cannot be used as an open
   redirect.
 - `/admin` is `noindex` in metadata and disallowed in `robots.txt`.

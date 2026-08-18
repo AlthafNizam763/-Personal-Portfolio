@@ -1,4 +1,5 @@
 import type { ApiResponse } from './types'
+import { MAX_UPLOAD_LABEL } from './upload-limits'
 
 /**
  * Browser-side fetch wrapper for the admin panel.
@@ -44,13 +45,31 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok || !json?.ok) {
     throw new ApiError(
-      json?.error ?? `Request failed (${res.status})`,
+      json?.error ?? describeHttpError(res.status),
       res.status,
       json?.fieldErrors
     )
   }
 
   return { data: json.data as T, meta: json.meta }
+}
+
+/**
+ * Text for a failure that never reached our JSON envelope — a platform-level
+ * rejection such as Vercel's request-body limit, which returns its own page and
+ * would otherwise surface to the admin as a bare status code.
+ */
+function describeHttpError(status: number): string {
+  if (status === 413) {
+    return `That file is too large for the server to accept. The limit is ${MAX_UPLOAD_LABEL}.`
+  }
+  if (status === 408 || status === 504) {
+    return 'The server took too long to respond. Please try again.'
+  }
+  if (status >= 500) {
+    return `The server could not complete the request (error ${status}). Please try again.`
+  }
+  return `Request failed (${status})`
 }
 
 /** Convenience helpers so call sites read as intent, not plumbing. */

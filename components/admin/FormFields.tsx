@@ -13,6 +13,7 @@ import {
 } from 'react-icons/tb'
 import { ICON_GROUPS, ICON_REGISTRY, getIcon } from '@/lib/icons'
 import { api } from '@/lib/api-client'
+import { acceptFor, validateUpload, MAX_UPLOAD_LABEL } from '@/lib/upload-limits'
 import { useToast } from './Toast'
 
 /* -------------------------------------------------------------------------
@@ -539,16 +540,20 @@ export function ImageUploader({
   const [preview, setPreview] = useState<string | null>(null)
   const inputId = useId()
 
-  const accept =
-    kind === 'document'
-      ? 'application/pdf'
-      : kind === 'video'
-        ? 'video/mp4,video/webm'
-        : 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/avif'
+  const accept = acceptFor(kind)
 
   const handleFile = useCallback(
     async (file: File | undefined) => {
       if (!file) return
+
+      // Same rules the endpoint applies, so an unusable file is reported
+      // immediately instead of after a round trip.
+      const invalid = validateUpload(file, kind)
+      if (invalid) {
+        toast.error(invalid.error)
+        if (inputRef.current) inputRef.current.value = ''
+        return
+      }
 
       const localUrl = URL.createObjectURL(file)
       setPreview(localUrl)
@@ -557,6 +562,9 @@ export function ImageUploader({
       try {
         const result = await api.upload(file, { folder, kind })
         onChange(result.url)
+        // The stored URL renders from `value` now; keeping the object URL would
+        // leave the preview pointing at a blob that is revoked a line later.
+        setPreview(null)
         toast.success('File uploaded.')
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Upload failed.')
@@ -664,7 +672,7 @@ export function ImageUploader({
                   Drop a file here or <span className="underline">browse</span>
                 </span>
                 <span className="text-xs">
-                  {kind === 'document' ? 'PDF' : kind === 'video' ? 'MP4 or WebM' : 'PNG, JPG, WebP, GIF or SVG'} · max 8 MB
+                  {kind === 'document' ? 'PDF' : kind === 'video' ? 'MP4 or WebM' : 'PNG, JPG, WebP, GIF or SVG'} · max {MAX_UPLOAD_LABEL}
                 </span>
               </>
             )}
@@ -725,13 +733,36 @@ export function GalleryUploader({
     setBusy(true)
 
     try {
-      const uploaded = await Promise.all(
-        Array.from(files).map((file) => api.upload(file, { folder, kind: 'image' }))
+      const picked = Array.from(files)
+
+      // Settled rather than all: one rejected file must not discard the images
+      // that uploaded alongside it — those are already stored, and throwing
+      // them away here would strand them as orphans.
+      const results = await Promise.allSettled(
+        picked.map((file) => {
+          const invalid = validateUpload(file, 'image')
+          if (invalid) return Promise.reject(new Error(`${file.name}: ${invalid.error}`))
+          return api.upload(file, { folder, kind: 'image' })
+        })
       )
-      onChange([...value, ...uploaded.map((u) => ({ url: u.url, alt: '' }))])
-      toast.success(`${uploaded.length} image(s) added.`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed.')
+
+      const uploaded = results
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => ({ url: r.value.url, alt: '' }))
+
+      if (uploaded.length > 0) {
+        onChange([...value, ...uploaded])
+        toast.success(`${uploaded.length} image(s) added.`)
+      }
+
+      const failures = results.filter((r) => r.status === 'rejected')
+      for (const failure of failures.slice(0, 3)) {
+        const reason = (failure as PromiseRejectedResult).reason
+        toast.error(reason instanceof Error ? reason.message : 'Upload failed.')
+      }
+      if (failures.length > 3) {
+        toast.error(`${failures.length - 3} more image(s) failed to upload.`)
+      }
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''
@@ -789,7 +820,7 @@ export function GalleryUploader({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={acceptFor('image')}
         multiple
         className="sr-only"
         onChange={(e) => void handleFiles(e.target.files)}
