@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * The Sora webfont is loaded through next/font in app/layout.tsx (which
+ * replaces the @import that used to sit at the top of src/index.css) and is
+ * exposed to Tailwind as `--font-sora`.
+ */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Prevents any wide section from producing a horizontal scrollbar on
+       small screens — matches `overflow-x-hidden` from the original App.jsx. */
+    overflow-x: hidden;
+  }
+
+  /* Honour a user's reduced-motion preference without changing the design for
+     everyone else. Framer Motion reads this too. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * The offset-block "brutalist" button used by the Resume link in the navbar.
+   * Extracted verbatim from the original markup so the navbar and any future
+   * usage cannot drift apart.
+   */
+  .btn-offset {
+    @apply relative inline-block px-4 py-2 font-medium group;
+  }
+
+  .btn-offset-shadow {
+    @apply absolute inset-0 w-full h-full transition duration-200 ease-out transform translate-x-1 translate-y-1 bg-black;
+  }
+
+  .btn-offset-face {
+    @apply absolute inset-0 w-full h-full bg-white border-2 border-black;
+  }
+
+  .btn-offset-label {
+    @apply relative text-black flex items-center gap-x-3;
+  }
+}
+
+@layer utilities {
+  /* The white-fill/black-outline treatment on words like "Developer". */
+  .text-stroke-black {
+    -webkit-text-stroke: 1px black;
+  }
+
+  .admin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d8 transparent;
+  }
+
+  .admin-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .admin-scroll::-webkit-scrollbar-thumb {
+    background-color: #d4d4d8;
+    border-radius: 9999px;
+  }
+
+  .admin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Decorative "flying gif" overlay (formerly src/utils/Unscreen.css).
+ * Disabled by default, exactly as it was in the original App.jsx.
+ * ------------------------------------------------------------------------- */
+.flying-gif {
+  position: fixed;
+  width: 80px;
+  height: auto;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.9;
+  transform-origin: center center;
+}
+
+@keyframes flyFromLeft {
+  0% { transform: translateX(-100vw) rotate(0deg); }
+  100% { transform: translateX(100vw) rotate(0deg); }
+}
+
+@keyframes flyFromRight {
+  0% { transform: translateX(100vw) scaleX(-1); }
+  100% { transform: translateX(-100vw) scaleX(-1); }
+}
+
+@keyframes flyFromTop {
+  0% { transform: translateY(-100vh) rotate(90deg); }
+  100% { transform: translateY(100vh) rotate(90deg); }
+}
+
+@keyframes flyFromBottom {
+  0% { transform: translateY(100vh) rotate(-90deg); }
+  100% { transform: translateY(-100vh) rotate(-90deg); }
+}
+
+@keyframes flyFromDiagonal {
+  0% { transform: translate(-100vw, 100vh) rotate(-45deg); }
+  100% { transform: translate(100vw, -100vh) rotate(-45deg); }
+}
+
+.direction-1 { top: 40vh; left: 0; animation: flyFromLeft 12s linear infinite; }
+.direction-2 { top: 10vh; right: 0; animation: flyFromRight 13s linear infinite; }
+.direction-3 { top: 0; left: 20vw; animation: flyFromTop 14s linear infinite; }
+.direction-4 { bottom: 0; left: 60vw; animation: flyFromBottom 15s linear infinite; }
+.direction-5 { top: 0; left: 0; animation: flyFromDiagonal 16s linear infinite; }
