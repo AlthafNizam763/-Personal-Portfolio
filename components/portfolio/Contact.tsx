@@ -288,9 +288,9 @@ export default function Contact({
       {mounted &&
         createPortal(
           <>
-            {/* Cockroach vs. frying pan. Keyed by `squashRun` so it replays
-                cleanly on a second submission; it hides itself once it has
-                faded out. */}
+            {/* Cockroach vs. flyswatter. Keyed by `squashRun` so it replays
+                cleanly on a second submission (and re-rolls which corner the
+                roach comes from); it hides itself once it has faded out. */}
             {squashRun > 0 && <RoachSquashOverlay key={squashRun} onReveal={revealSuccess} />}
 
             <AnimatePresence>
