@@ -4,10 +4,16 @@ import { mkdir, writeFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import {
   MAX_UPLOAD_BYTES,
+  MAX_SERVER_UPLOAD_BYTES,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
   ALLOWED_IMAGE_TYPES,
   ALLOWED_DOC_TYPES,
   ALLOWED_VIDEO_TYPES,
+  ALLOWED_MEDIA_TYPES,
+  EXTENSION_BY_TYPE,
   allowedTypesFor,
+  resolveFileType,
   validateUpload,
   type UploadKind,
   type UploadValidationError,
@@ -31,10 +37,15 @@ import {
 
 export {
   MAX_UPLOAD_BYTES,
+  MAX_SERVER_UPLOAD_BYTES,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
   ALLOWED_IMAGE_TYPES,
   ALLOWED_DOC_TYPES,
   ALLOWED_VIDEO_TYPES,
+  ALLOWED_MEDIA_TYPES,
   allowedTypesFor,
+  resolveFileType,
   validateUpload,
 }
 export type { UploadKind, UploadValidationError }
@@ -54,18 +65,6 @@ export class UploadBackendError extends Error {
 
 /** Every Vercel Blob read-write token carries this prefix. */
 const BLOB_TOKEN_PREFIX = 'vercel_blob_rw_'
-
-const EXTENSION_BY_TYPE: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-  'image/svg+xml': 'svg',
-  'image/avif': 'avif',
-  'application/pdf': 'pdf',
-  'video/mp4': 'mp4',
-  'video/webm': 'webm',
-}
 
 /**
  * An env var that exists but holds an empty string — the shape `.env.example`
@@ -109,16 +108,41 @@ export interface StoredFile {
   contentType: string
 }
 
+/** `projects`, `Profile Pics!` → `projects`, `profilepics`. */
+export function safeFolderName(folder: string): string {
+  return folder.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'misc'
+}
+
+/**
+ * Where a file gets stored: `uploads/<folder>/<slug>-<random>.<ext>`.
+ *
+ * Exported because a direct-to-Blob upload picks its own pathname in the
+ * browser, and both routes must agree on the shape — the client-token route
+ * checks the pathname it is handed against exactly this scheme.
+ */
+export function buildUploadPathname(
+  fileName: string,
+  contentType: string,
+  folder: string,
+  random = randomBytes(6).toString('hex')
+): string {
+  const ext = EXTENSION_BY_TYPE[contentType] ?? 'bin'
+  // Random suffix prevents collisions and stops one upload overwriting another
+  // when two files share a name.
+  return `uploads/${safeFolderName(folder)}/${slugifyBaseName(fileName)}-${random}.${ext}`
+}
+
 /**
  * @param folder logical grouping, e.g. "projects" or "certifications"
  */
 export async function storeFile(file: File, folder: string): Promise<StoredFile> {
-  const safeFolder = folder.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'misc'
-  const ext = EXTENSION_BY_TYPE[file.type] ?? 'bin'
-  // Random suffix prevents collisions and stops one upload overwriting another
-  // when two files share a name.
-  const filename = `${slugifyBaseName(file.name)}-${randomBytes(6).toString('hex')}.${ext}`
-  const pathname = `uploads/${safeFolder}/${filename}`
+  const safeFolder = safeFolderName(folder)
+  // A mobile picker may hand over an empty or generic `type`; the shared
+  // resolver falls back to the extension so the file is stored — and later
+  // served — with the content type it actually has.
+  const contentType = resolveFileType(file)
+  const pathname = buildUploadPathname(file.name, contentType, safeFolder)
+  const filename = pathname.split('/').pop()!
 
   const token = blobToken()
 
@@ -134,7 +158,7 @@ export async function storeFile(file: File, folder: string): Promise<StoredFile>
     try {
       const blob = await put(pathname, file, {
         access: 'public',
-        contentType: file.type,
+        contentType,
         token,
         // Our own suffix already guarantees uniqueness; disabling Vercel's keeps
         // the stored URL predictable.
@@ -144,7 +168,7 @@ export async function storeFile(file: File, folder: string): Promise<StoredFile>
         url: blob.url,
         pathname: blob.pathname,
         size: file.size,
-        contentType: file.type,
+        contentType,
       }
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err)
@@ -180,7 +204,7 @@ export async function storeFile(file: File, folder: string): Promise<StoredFile>
     url: `/${pathname}`,
     pathname: `/${pathname}`,
     size: file.size,
-    contentType: file.type,
+    contentType,
   }
 }
 
@@ -219,15 +243,33 @@ export function storageBackend(): 'vercel-blob' | 'local-disk' {
 }
 
 /**
+ * Whether the browser may upload straight to Blob instead of posting through
+ * this app. That path is what lets a video exceed the platform's 4.5 MB
+ * request-body limit, and it needs a usable Blob token to mint a client token.
+ */
+export function supportsClientUploads(): boolean {
+  const token = blobToken()
+  return Boolean(token?.startsWith(BLOB_TOKEN_PREFIX))
+}
+
+export interface UploadBackendStatus {
+  ready: boolean
+  backend: string
+  reason?: string
+  /** Direct-to-Blob uploads available, i.e. large files are accepted. */
+  clientUploads?: boolean
+}
+
+/**
  * Whether uploads can succeed at all in this environment. The admin panel shows
  * the reason up front rather than after a failed upload.
  */
-export function uploadBackendStatus(): { ready: boolean; backend: string; reason?: string } {
+export function uploadBackendStatus(): UploadBackendStatus {
   const token = blobToken()
 
   if (token) {
     return token.startsWith(BLOB_TOKEN_PREFIX)
-      ? { ready: true, backend: 'vercel-blob' }
+      ? { ready: true, backend: 'vercel-blob', clientUploads: true }
       : {
           ready: false,
           backend: 'vercel-blob',

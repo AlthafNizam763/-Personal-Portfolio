@@ -9,6 +9,10 @@ import type { PortfolioData } from './types'
  *  2. The public page falls back to it if the database is unreachable, so a
  *     transient Atlas outage degrades to "slightly stale" rather than "blank".
  *
+ * Exception: `aboutParagraphs` was rewritten to describe the real role, stack,
+ * and shipped projects instead of the earlier generic copy. The paragraph count
+ * is unchanged, so the About section keeps its original layout.
+ *
  * Inline emphasis uses `**double asterisks**`, rendered by
  * `components/portfolio/RichText.tsx` as <span className="font-semibold">.
  * This reproduces the original inline <span> markup without storing raw HTML.
@@ -22,9 +26,9 @@ export const SEED_PROFILE = {
   shortDescription:
     'Passionate Full Stack Developer specializing in Laravel, Node.js, React.js, and Next.js. Dedicated to building scalable, user-focused web applications, solving real-world problems, and continuously learning emerging technologies to deliver impactful solutions.',
   aboutParagraphs: [
-    "I'm a passionate **Full Stack Developer** with 2 years of experience building scalable, secure, and user-centric web applications. I specialize in **Laravel, CodeIgniter, Node.js, React.js, and Next.js**, creating robust backend systems and modern, responsive user interfaces.",
-    "Currently, I work at **DOCME Cloud Solutions**, where I contribute to enterprise-grade HRMS solutions by developing RESTful APIs, backend services, and scalable web applications using **PHP, MySQL, PostgreSQL, MongoDB, JavaScript, and TypeScript**. I'm passionate about writing clean, maintainable code and delivering software that creates real business value.",
-    "Beyond my professional work, I'm continuously expanding my expertise by learning **Flutter** for cross-platform mobile development while staying up to date with modern web technologies. Outside of coding, I enjoy working out at the gym, gaming, watching movies, and exploring new technologies. I'm always excited to learn, collaborate, and take on challenging projects that help me grow as a developer.",
+    "I'm a **Full Stack Developer** based in Kerala, India, with over 2 years of experience building scalable, secure, and user-focused web applications. I work across the stack with **Laravel, CodeIgniter, Node.js, React.js, and Next.js**, pairing well-structured backend services with clean, responsive interfaces.",
+    "As a **Software Engineer at DOCME Cloud Solutions**, I contribute to **Loyaltri**, an enterprise HRMS platform that automates hiring, onboarding, payroll, and attendance. My work covers **RESTful API** design, **JWT authentication** and **role-based access control**, performance tuning across **MySQL, PostgreSQL, and MongoDB**, and resolving production issues alongside a cross-functional Agile team. I have also delivered client platforms including **Zenith Academy**, **Voice of the Voiceless**, and **RACE India**.",
+    "Beyond my professional work, I'm expanding into cross-platform mobile development with **Flutter** and **Firebase** while keeping pace with the modern web ecosystem. Outside of coding I enjoy the gym, gaming, movies, and exploring new tools — and I'm always open to challenging projects, collaboration, and opportunities to grow as a reliable, results-driven developer.",
   ],
   location: 'Kerala, India',
   email: 'althafnizam763@gmail.com',

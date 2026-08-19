@@ -1,7 +1,9 @@
 import { requireSession } from '@/lib/auth'
 import { fail, ok, serverError, unauthorized } from '@/lib/api'
 import {
-  MAX_UPLOAD_BYTES,
+  MAX_SERVER_UPLOAD_BYTES,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
   UploadBackendError,
   storageBackend,
   storeFile,
@@ -10,6 +12,7 @@ import {
   deleteFile,
   type UploadKind,
 } from '@/lib/storage'
+import { formatBytes } from '@/lib/upload-limits'
 
 // Needs the Node runtime for filesystem access in the local-disk fallback.
 export const runtime = 'nodejs'
@@ -17,16 +20,22 @@ export const dynamic = 'force-dynamic'
 // Large uploads on a cold container can take a while to stream to Blob.
 export const maxDuration = 60
 
-const KINDS: UploadKind[] = ['image', 'document', 'video']
+const KINDS: UploadKind[] = ['image', 'document', 'video', 'media']
 
 /**
  * GET /api/admin/upload
  * Reports whether uploads can succeed here, so the admin panel can warn about a
- * missing storage backend before anyone picks a file.
+ * missing storage backend before anyone picks a file, and knows whether files
+ * over the platform's request-body limit may be sent straight to Blob.
  */
 export async function GET() {
   if (!(await requireSession())) return unauthorized()
-  return ok({ ...uploadBackendStatus(), maxBytes: MAX_UPLOAD_BYTES })
+  return ok({
+    ...uploadBackendStatus(),
+    maxBytes: MAX_IMAGE_BYTES,
+    maxServerBytes: MAX_SERVER_UPLOAD_BYTES,
+    maxVideoBytes: MAX_VIDEO_BYTES,
+  })
 }
 
 /**
@@ -81,7 +90,9 @@ export async function POST(req: Request) {
     const message = err instanceof Error ? err.message : ''
     if (message.includes('Body exceeded') || message.includes('413')) {
       return fail(
-        `That file is too large. The limit is ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.`,
+        `That file is too large to send through the server (limit ${formatBytes(
+          MAX_SERVER_UPLOAD_BYTES
+        )}). Configure a Vercel Blob store so large files upload directly.`,
         413
       )
     }
