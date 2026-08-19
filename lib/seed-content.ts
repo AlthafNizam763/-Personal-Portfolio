@@ -26,9 +26,9 @@ export const SEED_PROFILE = {
   shortDescription:
     'Passionate Full Stack Developer specializing in Laravel, Node.js, React.js, and Next.js. Dedicated to building scalable, user-focused web applications, solving real-world problems, and continuously learning emerging technologies to deliver impactful solutions.',
   aboutParagraphs: [
-    "I'm a **Full Stack Developer** based in Kerala, India, with over 2 years of experience building scalable, secure, and user-focused web applications. I work across the stack with **Laravel, CodeIgniter, Node.js, React.js, and Next.js**, pairing well-structured backend services with clean, responsive interfaces.",
-    "As a **Software Engineer at DOCME Cloud Solutions**, I contribute to **Loyaltri**, an enterprise HRMS platform that automates hiring, onboarding, payroll, and attendance. My work covers **RESTful API** design, **JWT authentication** and **role-based access control**, performance tuning across **MySQL, PostgreSQL, and MongoDB**, and resolving production issues alongside a cross-functional Agile team. I have also delivered client platforms including **Zenith Academy**, **Voice of the Voiceless**, and **RACE India**.",
-    "Beyond my professional work, I'm expanding into cross-platform mobile development with **Flutter** and **Firebase** while keeping pace with the modern web ecosystem. Outside of coding I enjoy the gym, gaming, movies, and exploring new tools — and I'm always open to challenging projects, collaboration, and opportunities to grow as a reliable, results-driven developer.",
+    "I'm a passionate **Full Stack Developer** with 2+ years of experience building scalable, secure, and high-performance web applications. I specialize in **PHP, Laravel, CodeIgniter, Node.js, React.js, and Next.js**, with a strong focus on robust backend systems, REST APIs, and responsive user interfaces.",
+    "Currently, I work at **DOCME Cloud Solutions**, where I contribute to enterprise-grade HRMS platforms — building backend services, database-driven features, and REST APIs across **MySQL, PostgreSQL, and MongoDB**. I focus on writing clean, maintainable code that solves real business problems.",
+    "Beyond my day-to-day work, I'm expanding into cross-platform mobile development with **Flutter** and **Firebase**. Outside of coding I enjoy the gym, gaming, and movies — and I'm always open to challenging projects and collaboration.",
   ],
   location: 'Kerala, India',
   email: 'althafnizam763@gmail.com',
