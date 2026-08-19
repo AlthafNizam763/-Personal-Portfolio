@@ -22,6 +22,7 @@ export type AdminFieldType =
   | 'image'
   | 'document'
   | 'video'
+  | 'media'
   | 'paragraphs'
   | 'gallery'
 
@@ -37,6 +38,8 @@ export interface AdminField {
   full?: boolean
   /** Upload destination folder, for the file-ish field types. */
   uploadFolder?: string
+  /** For `gallery`: what the picker accepts. Defaults to images and video. */
+  uploadKind?: 'image' | 'video' | 'media'
   /** Tailwind aspect class for image previews. */
   aspect?: string
   rows?: number

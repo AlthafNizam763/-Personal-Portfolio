@@ -1,12 +1,15 @@
 import Image from 'next/image'
+import { isGifUrl, isVectorUrl } from '@/lib/upload-limits'
 
 /**
  * Wrapper that routes each image to the right renderer.
  *
  * Raster images (uploads, screenshots, logos) go through next/image so they
- * get AVIF/WebP conversion, responsive srcsets and lazy loading. SVGs and
- * data URIs are emitted as plain <img>: the optimizer passes vectors through
- * untouched, so routing them through it would only add a round trip.
+ * get AVIF/WebP conversion, responsive srcsets and lazy loading. SVGs, GIFs
+ * and data URIs are emitted as plain <img>: the optimizer passes vectors and
+ * animated frames through untouched, so routing them through it would only add
+ * a round trip — and a GIF that lost its animation would be a broken asset,
+ * not a slower one.
  *
  * `width`/`height` describe the intrinsic aspect ratio only — layout is driven
  * by `className`, which is what keeps the migrated markup pixel-identical.
@@ -32,10 +35,11 @@ export default function MediaImage({
 }) {
   if (!src) return null
 
-  const isVector = /\.svg(\?.*)?$/i.test(src) || src.startsWith('data:')
+  const skipsOptimizer = isVectorUrl(src) || isGifUrl(src) || src.startsWith('data:')
 
-  if (isVector) {
-    // Vectors gain nothing from the image optimizer, so they skip next/image.
+  if (skipsOptimizer) {
+    // Vectors and animated GIFs gain nothing from the image optimizer, so they
+    // skip next/image.
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img

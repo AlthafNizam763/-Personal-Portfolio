@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { TbExternalLink } from 'react-icons/tb'
 import { FaGithub } from 'react-icons/fa'
 import SectionHeading from './SectionHeading'
-import MediaImage from './MediaImage'
+import Media from './Media'
 import { padIndex } from '@/lib/utils'
 import type { ProjectDTO } from '@/lib/types'
 
@@ -40,9 +40,12 @@ export default function Projects({ projects }: { projects: ProjectDTO[] }) {
             viewport={{ once: true }}
           >
             <div className="lg:w-[500px] w-full rounded-2xl overflow-hidden shadow-lg">
-              {/* Image takes precedence over video, matching the original. */}
+              {/* Image takes precedence over video, matching the original. The
+                  main slot accepts a GIF or a clip too, so <Media> picks the
+                  element from the stored URL — the precedence itself is
+                  unchanged. */}
               {project.image ? (
-                <MediaImage
+                <Media
                   src={project.image}
                   alt={project.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
@@ -51,15 +54,14 @@ export default function Projects({ projects }: { projects: ProjectDTO[] }) {
                   sizes="(max-width: 1024px) 100vw, 500px"
                 />
               ) : project.video ? (
-                <video
+                <Media
                   src={project.video}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  controls
-                  aria-label={`${project.title} demo`}
+                  alt={`${project.title} demo`}
                   className="w-full h-full object-cover"
+                  width={1000}
+                  height={640}
+                  sizes="(max-width: 1024px) 100vw, 500px"
+                  controls
                 />
               ) : null}
             </div>

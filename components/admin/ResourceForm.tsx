@@ -5,7 +5,7 @@ import {
   Field,
   GalleryUploader,
   IconPicker,
-  ImageUploader,
+  MediaUploader,
   NumberInput,
   ParagraphList,
   SelectInput,
@@ -14,6 +14,7 @@ import {
   TextArea,
   TextInput,
 } from './FormFields'
+import type { UploadKind } from '@/lib/upload-limits'
 import type { AdminField } from './types'
 
 /**
@@ -192,11 +193,13 @@ function renderControl(
     case 'image':
     case 'document':
     case 'video':
+    case 'media':
+      // These four field types are named after the upload kinds they map to.
       return (
-        <ImageUploader
+        <MediaUploader
           value={String(value ?? '')}
           folder={field.uploadFolder ?? 'misc'}
-          kind={field.type === 'image' ? 'image' : field.type}
+          kind={field.type as UploadKind}
           aspect={field.aspect}
           error={error}
           onChange={(v) => onChange(field.name, v)}
@@ -208,6 +211,7 @@ function renderControl(
         <GalleryUploader
           value={Array.isArray(value) ? (value as { url: string; alt: string }[]) : []}
           folder={field.uploadFolder ?? 'misc'}
+          kind={field.uploadKind ?? 'media'}
           onChange={(v) => onChange(field.name, v)}
         />
       )

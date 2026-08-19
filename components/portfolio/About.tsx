@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import MediaImage from './MediaImage'
+import Media from './Media'
 import RichText from './RichText'
 import type { ProfileDTO } from '@/lib/types'
 
@@ -28,7 +28,7 @@ export default function About({ profile }: { profile: ProfileDTO }) {
         transition={{ type: 'spring', stiffness: 80, damping: 10 }}
         viewport={{ once: true }}
       >
-        <MediaImage
+        <Media
           src={profile.aboutImage}
           alt="About Me Illustration"
           width={800}

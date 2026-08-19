@@ -140,6 +140,53 @@ export function maxBytesFor(kind: UploadKind, type?: string): number {
 }
 
 /* -------------------------------------------------------------------------
+ * Stored path
+ *
+ * Lives here rather than in `lib/storage.ts` because a direct-to-Blob upload
+ * picks its own pathname in the browser: server and client must produce the
+ * same shape, and the token route validates against it.
+ * ---------------------------------------------------------------------- */
+
+/** `projects`, `Profile Pics!` → `projects`, `profilepics`. */
+export function safeFolderName(folder: string): string {
+  return folder.replace(/[^a-z0-9-]/gi, '').toLowerCase().slice(0, 40) || 'misc'
+}
+
+/** `my Photo (2).PNG` → `my-photo-2` */
+export function slugifyFileName(name: string): string {
+  return (
+    name
+      .replace(/\.[a-z0-9]+$/i, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'file'
+  )
+}
+
+/** 12 hex characters from the Web Crypto API, which Node and browsers share. */
+export function randomSuffix(): string {
+  const bytes = new Uint8Array(6)
+  globalThis.crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Where a file is stored: `uploads/<folder>/<slug>-<random>.<ext>`. The random
+ * suffix prevents collisions and stops one upload overwriting another when two
+ * files share a name.
+ */
+export function buildUploadPathname(
+  fileName: string,
+  contentType: string,
+  folder: string,
+  random: string = randomSuffix()
+): string {
+  const ext = EXTENSION_BY_TYPE[contentType] ?? 'bin'
+  return `uploads/${safeFolderName(folder)}/${slugifyFileName(fileName)}-${random}.${ext}`
+}
+
+/* -------------------------------------------------------------------------
  * URL classification — used by the public site and the admin previews
  * ---------------------------------------------------------------------- */
 

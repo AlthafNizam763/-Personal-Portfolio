@@ -1,5 +1,4 @@
 import { put, del } from '@vercel/blob'
-import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import {
@@ -11,9 +10,10 @@ import {
   ALLOWED_DOC_TYPES,
   ALLOWED_VIDEO_TYPES,
   ALLOWED_MEDIA_TYPES,
-  EXTENSION_BY_TYPE,
   allowedTypesFor,
+  buildUploadPathname,
   resolveFileType,
+  safeFolderName,
   validateUpload,
   type UploadKind,
   type UploadValidationError,
@@ -45,6 +45,7 @@ export {
   ALLOWED_VIDEO_TYPES,
   ALLOWED_MEDIA_TYPES,
   allowedTypesFor,
+  buildUploadPathname,
   resolveFileType,
   validateUpload,
 }
@@ -89,47 +90,11 @@ const BLOB_SETUP_HINT =
   'Create one in the Vercel dashboard under Storage → Blob and connect it to this project — ' +
   'BLOB_READ_WRITE_TOKEN is then injected automatically — then redeploy.'
 
-/** `my Photo (2).PNG` -> `my-photo-2` */
-function slugifyBaseName(name: string): string {
-  return (
-    path
-      .basename(name, path.extname(name))
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 48) || 'file'
-  )
-}
-
 export interface StoredFile {
   url: string
   pathname: string
   size: number
   contentType: string
-}
-
-/** `projects`, `Profile Pics!` → `projects`, `profilepics`. */
-export function safeFolderName(folder: string): string {
-  return folder.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'misc'
-}
-
-/**
- * Where a file gets stored: `uploads/<folder>/<slug>-<random>.<ext>`.
- *
- * Exported because a direct-to-Blob upload picks its own pathname in the
- * browser, and both routes must agree on the shape — the client-token route
- * checks the pathname it is handed against exactly this scheme.
- */
-export function buildUploadPathname(
-  fileName: string,
-  contentType: string,
-  folder: string,
-  random = randomBytes(6).toString('hex')
-): string {
-  const ext = EXTENSION_BY_TYPE[contentType] ?? 'bin'
-  // Random suffix prevents collisions and stops one upload overwriting another
-  // when two files share a name.
-  return `uploads/${safeFolderName(folder)}/${slugifyBaseName(fileName)}-${random}.${ext}`
 }
 
 /**

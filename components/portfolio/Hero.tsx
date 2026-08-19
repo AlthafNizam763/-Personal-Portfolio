@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { TypeAnimation } from 'react-type-animation'
-import MediaImage from './MediaImage'
+import Media from './Media'
 import SocialIcons from './SocialIcons'
 import type { ProfileDTO, SocialLinkDTO } from '@/lib/types'
 
@@ -109,7 +109,7 @@ export default function Hero({
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 1, ease: 'easeInOut' }}
         >
-          <MediaImage
+          <Media
             src={profile.heroImage}
             alt={profile.name ? `${profile.name} — illustration` : 'Hero illustration'}
             className="h-full w-full"

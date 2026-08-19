@@ -1,19 +1,31 @@
 'use client'
 
-import { useCallback, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   TbUpload,
   TbTrash,
   TbPhoto,
+  TbVideo,
   TbX,
   TbPlus,
   TbSearch,
   TbFileText,
   TbGripVertical,
+  TbAlertTriangle,
 } from 'react-icons/tb'
 import { ICON_GROUPS, ICON_REGISTRY, getIcon } from '@/lib/icons'
-import { api } from '@/lib/api-client'
-import { acceptFor, validateUpload, MAX_UPLOAD_LABEL } from '@/lib/upload-limits'
+import { api, uploadBackendInfo, type UploadBackendInfo } from '@/lib/api-client'
+import {
+  acceptFor,
+  describeAccepted,
+  formatBytes,
+  isVideoType,
+  isVideoUrl,
+  labelForUrl,
+  resolveFileType,
+  validateUpload,
+  type UploadKind,
+} from '@/lib/upload-limits'
 import { useToast } from './Toast'
 
 /* -------------------------------------------------------------------------
@@ -512,10 +524,80 @@ export function IconPicker({
 }
 
 /* -------------------------------------------------------------------------
- * File / image upload with live preview
+ * Media upload — images, GIFs, video and documents
  * ---------------------------------------------------------------------- */
 
-export function ImageUploader({
+/** What the browser knows about a file that is still uploading. */
+interface PendingFile {
+  name: string
+  size: number
+  /** Resolved type, so a mobile pick with an empty `File.type` still shows. */
+  type: string
+}
+
+/**
+ * Reports whether this deployment can store uploads at all.
+ *
+ * Asked once per screen (the answer is cached in the API client) so the
+ * uploader can say "no Blob store is configured" before someone picks a 40 MB
+ * video and waits for it to fail.
+ */
+function useUploadBackend(): UploadBackendInfo | null {
+  const [info, setInfo] = useState<UploadBackendInfo | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    uploadBackendInfo()
+      .then((result) => {
+        if (!cancelled) setInfo(result)
+      })
+      // A failed status check is not itself an upload failure — stay quiet and
+      // let the upload report the real problem if there is one.
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return info
+}
+
+/** Thin bar under the preview; `null` percent means "started, size unknown". */
+function ProgressBar({ percent }: { percent: number | null }) {
+  return (
+    <div
+      className="h-1.5 rounded-full bg-admin-border overflow-hidden"
+      role="progressbar"
+      aria-label="Upload progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={percent ?? undefined}
+    >
+      <div
+        className={`h-full bg-black transition-[width] duration-200 ${
+          percent === null ? 'w-1/3 animate-pulse' : ''
+        }`}
+        style={percent === null ? undefined : { width: `${percent}%` }}
+      />
+    </div>
+  )
+}
+
+/**
+ * One media slot: pick a file, see it before saving, keep the stored URL.
+ *
+ * The upload happens as soon as a file is chosen, so the preview shown in the
+ * form is the real stored asset by the time the record is saved — but nothing
+ * is written to the record until the surrounding form is submitted, so
+ * cancelling out of the form leaves the existing value alone.
+ *
+ * `kind` decides what the picker offers and how the preview renders:
+ *   image    — PNG/JPG/WebP/GIF/SVG/AVIF
+ *   video    — MP4/WebM
+ *   media    — either, for slots that take an illustration *or* a clip
+ *   document — PDF
+ */
+export function MediaUploader({
   value,
   onChange,
   folder,
@@ -527,20 +609,42 @@ export function ImageUploader({
   value: string
   onChange: (url: string) => void
   folder: string
-  kind?: 'image' | 'document' | 'video'
+  kind?: UploadKind
   aspect?: string
   help?: string
   error?: string[]
 }) {
   const toast = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [busy, setBusy] = useState(false)
-  const [dragging, setDragging] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
   /** Object URL shown instantly while the real upload is still in flight. */
-  const [preview, setPreview] = useState<string | null>(null)
-  const inputId = useId()
+  const objectUrlRef = useRef<string | null>(null)
 
+  const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<number | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [pending, setPending] = useState<PendingFile | null>(null)
+  const [dragging, setDragging] = useState(false)
+
+  const backend = useUploadBackend()
+  const inputId = useId()
   const accept = acceptFor(kind)
+  const blocked = backend !== null && !backend.ready
+
+  /** Frees the previous object URL; keeping them alive leaks the whole file. */
+  const releasePreview = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+    }
+  }, [])
 
   const handleFile = useCallback(
     async (file: File | undefined) => {
@@ -555,37 +659,66 @@ export function ImageUploader({
         return
       }
 
+      releasePreview()
       const localUrl = URL.createObjectURL(file)
+      objectUrlRef.current = localUrl
+
       setPreview(localUrl)
+      setPending({ name: file.name, size: file.size, type: resolveFileType(file) })
+      setProgress(0)
       setBusy(true)
 
+      const controller = new AbortController()
+      abortRef.current = controller
+
       try {
-        const result = await api.upload(file, { folder, kind })
+        const result = await api.upload(file, {
+          folder,
+          kind,
+          signal: controller.signal,
+          onProgress: setProgress,
+        })
+
         onChange(result.url)
         // The stored URL renders from `value` now; keeping the object URL would
         // leave the preview pointing at a blob that is revoked a line later.
         setPreview(null)
+        setPending(null)
+        releasePreview()
         toast.success('File uploaded.')
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Upload failed.')
         setPreview(null)
+        setPending(null)
+        releasePreview()
+
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          toast.push('Upload cancelled.')
+        } else {
+          toast.error(err instanceof Error ? err.message : 'Upload failed.')
+        }
       } finally {
+        abortRef.current = null
         setBusy(false)
-        URL.revokeObjectURL(localUrl)
+        setProgress(null)
         if (inputRef.current) inputRef.current.value = ''
       }
     },
-    [folder, kind, onChange, toast]
+    [folder, kind, onChange, releasePreview, toast]
   )
 
   const shown = preview ?? value
   const isDoc = kind === 'document'
-  const isVideo = kind === 'video'
+  // While a file is in flight its own type decides the preview; once stored,
+  // the URL is all there is to go on.
+  const showsVideo = !isDoc && (pending ? isVideoType(pending.type) : isVideoUrl(value))
+
+  const openPicker = () => inputRef.current?.click()
 
   return (
     <div>
       <div
         onDragOver={(e) => {
+          if (blocked || busy) return
           e.preventDefault()
           setDragging(true)
         }}
@@ -593,6 +726,7 @@ export function ImageUploader({
         onDrop={(e) => {
           e.preventDefault()
           setDragging(false)
+          if (blocked || busy) return
           void handleFile(e.dataTransfer.files?.[0])
         }}
         className={`relative rounded-lg border-2 border-dashed transition-colors ${
@@ -601,7 +735,9 @@ export function ImageUploader({
       >
         {shown ? (
           <div className="p-3">
-            <div className={`relative ${isDoc ? '' : aspect} rounded-md overflow-hidden bg-admin-bg`}>
+            <div
+              className={`relative ${isDoc ? '' : aspect} rounded-md overflow-hidden bg-admin-bg`}
+            >
               {isDoc ? (
                 <div className="flex items-center gap-3 p-4">
                   <TbFileText size={28} className="text-admin-muted shrink-0" aria-hidden="true" />
@@ -611,69 +747,114 @@ export function ImageUploader({
                     rel="noopener noreferrer"
                     className="text-sm text-admin-ink font-medium truncate hover:underline"
                   >
-                    {shown.split('/').pop()}
+                    {pending?.name ?? shown.split('/').pop()}
                   </a>
                 </div>
-              ) : isVideo ? (
-                <video src={shown} className="w-full h-full object-cover" muted playsInline controls />
+              ) : showsVideo ? (
+                // Controls rather than autoplay: this is a review surface, and
+                // muted + playsInline keep iOS from taking the video fullscreen
+                // the moment it is tapped.
+                <video
+                  key={shown}
+                  src={shown}
+                  className="w-full h-full object-contain bg-black"
+                  controls
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
               ) : (
-                // The preview may be a blob: URL, which next/image cannot process.
+                // The preview may be a blob: URL, which next/image cannot
+                // process, and an animated GIF must not be re-encoded.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={shown} alt="Preview" className="w-full h-full object-contain" />
               )}
 
               {busy && (
                 <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-admin-ink">Uploading…</span>
+                  <span className="text-xs font-semibold text-admin-ink">
+                    {progress === null ? 'Uploading…' : `Uploading… ${progress}%`}
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 mt-3">
-              <p className="text-xs text-admin-muted font-mono truncate flex-1" title={value}>
-                {value || 'Pending…'}
-              </p>
+            {busy && (
+              <div className="mt-3">
+                <ProgressBar percent={progress} />
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-admin-muted font-mono truncate" title={value}>
+                  {pending ? pending.name : value || 'Pending…'}
+                </p>
+                <p className="text-[11px] text-admin-muted mt-0.5">
+                  {pending
+                    ? `${formatBytes(pending.size)} · ${pending.type}`
+                    : labelForUrl(value)}
+                </p>
+              </div>
+
               <div className="flex gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={busy}
-                  className="text-xs font-semibold px-2.5 py-1.5 rounded border border-admin-border hover:bg-admin-bg disabled:opacity-50"
-                >
-                  Replace
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreview(null)
-                    onChange('')
-                  }}
-                  disabled={busy}
-                  className="text-xs font-semibold px-2.5 py-1.5 rounded border border-admin-border text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  Remove
-                </button>
+                {busy ? (
+                  <button
+                    type="button"
+                    onClick={() => abortRef.current?.abort()}
+                    className="text-xs font-semibold px-3 py-2 rounded border border-admin-border hover:bg-admin-bg"
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={openPicker}
+                      disabled={blocked}
+                      className="text-xs font-semibold px-3 py-2 rounded border border-admin-border hover:bg-admin-bg disabled:opacity-50"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        releasePreview()
+                        setPreview(null)
+                        setPending(null)
+                        onChange('')
+                      }}
+                      className="text-xs font-semibold px-3 py-2 rounded border border-admin-border text-red-600 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
         ) : (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-            className="w-full px-4 py-8 flex flex-col items-center gap-2 text-admin-muted hover:text-admin-ink transition-colors"
+            onClick={openPicker}
+            disabled={busy || blocked}
+            className="w-full px-4 py-8 flex flex-col items-center gap-2 text-admin-muted hover:text-admin-ink transition-colors disabled:cursor-not-allowed"
           >
             {busy ? (
               <span className="text-sm font-semibold">Uploading…</span>
             ) : (
               <>
-                {kind === 'document' ? <TbUpload size={26} /> : <TbPhoto size={26} />}
+                {kind === 'document' ? (
+                  <TbUpload size={26} aria-hidden="true" />
+                ) : kind === 'video' ? (
+                  <TbVideo size={26} aria-hidden="true" />
+                ) : (
+                  <TbPhoto size={26} aria-hidden="true" />
+                )}
                 <span className="text-sm font-semibold">
                   Drop a file here or <span className="underline">browse</span>
                 </span>
-                <span className="text-xs">
-                  {kind === 'document' ? 'PDF' : kind === 'video' ? 'MP4 or WebM' : 'PNG, JPG, WebP, GIF or SVG'} · max {MAX_UPLOAD_LABEL}
-                </span>
+                <span className="text-xs text-center px-2">{describeAccepted(kind)}</span>
               </>
             )}
           </button>
@@ -689,11 +870,20 @@ export function ImageUploader({
         />
       </div>
 
+      {blocked && backend?.reason && (
+        <p className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <TbAlertTriangle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
+          <span>{backend.reason}</span>
+        </p>
+      )}
+
       {/* Escape hatch: paste a URL for media hosted elsewhere. */}
       <input
         value={value}
         onChange={(e) => {
+          releasePreview()
           setPreview(null)
+          setPending(null)
           onChange(e.target.value)
         }}
         placeholder="…or paste a URL / path such as /assets/logo.svg"
@@ -711,38 +901,47 @@ export function ImageUploader({
   )
 }
 
+/** Previous name for the same control, kept so older call sites keep working. */
+export const ImageUploader = MediaUploader
+
 /* -------------------------------------------------------------------------
- * Gallery — multiple images for a single project
+ * Gallery — several assets for a single record
  * ---------------------------------------------------------------------- */
 
 export function GalleryUploader({
   value,
   onChange,
   folder,
+  kind = 'media',
 }: {
   value: { url: string; alt: string }[]
   onChange: (value: { url: string; alt: string }[]) => void
   folder: string
+  kind?: UploadKind
 }) {
   const toast = useToast()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(0)
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
     setBusy(true)
+    setDone(0)
 
     try {
       const picked = Array.from(files)
 
-      // Settled rather than all: one rejected file must not discard the images
+      // Settled rather than all: one rejected file must not discard the assets
       // that uploaded alongside it — those are already stored, and throwing
       // them away here would strand them as orphans.
       const results = await Promise.allSettled(
-        picked.map((file) => {
-          const invalid = validateUpload(file, 'image')
-          if (invalid) return Promise.reject(new Error(`${file.name}: ${invalid.error}`))
-          return api.upload(file, { folder, kind: 'image' })
+        picked.map(async (file) => {
+          const invalid = validateUpload(file, kind)
+          if (invalid) throw new Error(`${file.name}: ${invalid.error}`)
+          const uploaded = await api.upload(file, { folder, kind })
+          setDone((n) => n + 1)
+          return uploaded
         })
       )
 
@@ -752,7 +951,7 @@ export function GalleryUploader({
 
       if (uploaded.length > 0) {
         onChange([...value, ...uploaded])
-        toast.success(`${uploaded.length} image(s) added.`)
+        toast.success(`${uploaded.length} file(s) added.`)
       }
 
       const failures = results.filter((r) => r.status === 'rejected')
@@ -761,10 +960,11 @@ export function GalleryUploader({
         toast.error(reason instanceof Error ? reason.message : 'Upload failed.')
       }
       if (failures.length > 3) {
-        toast.error(`${failures.length - 3} more image(s) failed to upload.`)
+        toast.error(`${failures.length - 3} more file(s) failed to upload.`)
       }
     } finally {
       setBusy(false)
+      setDone(0)
       if (inputRef.current) inputRef.current.value = ''
     }
   }
@@ -773,26 +973,37 @@ export function GalleryUploader({
     <div>
       {value.length > 0 && (
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-          {value.map((image, index) => (
+          {value.map((item, index) => (
             <li
-              key={`${image.url}-${index}`}
+              key={`${item.url}-${index}`}
               className="rounded-lg border border-admin-border overflow-hidden"
             >
               <div className="aspect-video bg-admin-bg">
-                {/* eslint-disable-next-line @next/next/no-img-element -- small
-                    admin thumbnail, may be a remote Blob URL. */}
-                <img src={image.url} alt="" className="w-full h-full object-cover" />
+                {isVideoUrl(item.url) ? (
+                  <video
+                    src={item.url}
+                    className="w-full h-full object-cover bg-black"
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element -- small
+                     admin thumbnail, may be a remote Blob URL or a GIF. */
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                )}
               </div>
               <div className="p-2 space-y-2">
                 <input
-                  value={image.alt}
+                  value={item.alt}
                   onChange={(e) => {
                     const next = [...value]
-                    next[index] = { ...image, alt: e.target.value }
+                    next[index] = { ...item, alt: e.target.value }
                     onChange(next)
                   }}
                   placeholder="Alt text"
-                  aria-label={`Alt text for image ${index + 1}`}
+                  aria-label={`Alt text for item ${index + 1}`}
                   className="w-full text-xs rounded border border-admin-border px-2 py-1.5 focus:outline-none focus:border-black"
                 />
                 <button
@@ -814,13 +1025,15 @@ export function GalleryUploader({
         disabled={busy}
         className="w-full rounded-lg border-2 border-dashed border-admin-border px-4 py-5 text-sm font-semibold text-admin-muted hover:text-admin-ink hover:border-black transition-colors disabled:opacity-50"
       >
-        {busy ? 'Uploading…' : '+ Add gallery images'}
+        {busy ? `Uploading… ${done} done` : '+ Add images or video'}
       </button>
+
+      <p className="text-xs text-admin-muted mt-1.5">{describeAccepted(kind)}</p>
 
       <input
         ref={inputRef}
         type="file"
-        accept={acceptFor('image')}
+        accept={acceptFor(kind)}
         multiple
         className="sr-only"
         onChange={(e) => void handleFiles(e.target.files)}

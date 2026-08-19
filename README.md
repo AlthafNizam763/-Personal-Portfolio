@@ -112,7 +112,8 @@ app/
 │   ├── contact/              public contact form endpoint
 │   ├── admin/[resource]/     generic CRUD for all nine collections
 │   ├── admin/profile|settings|stats|upload
-│   └── uploads/[...path]/    serves local-disk uploads at runtime
+│   ├── blob-upload/          issues scoped tokens for direct-to-Blob uploads
+│   └── uploads/[...path]/    serves local-disk uploads at runtime (range-aware)
 components/
 ├── portfolio/                Hero, Skills, Experience, About, Services,
 │                             Projects, Education, Certifications,
@@ -146,10 +147,13 @@ The admin CRUD is data-driven — there are no per-resource route files:
   previously issued cookie.
 - Login is rate-limited per IP+email; the contact form per IP. Both are in-memory, so on serverless
   they only constrain a single warm container — put a WAF in front if you need hard guarantees.
-- Uploads are restricted by MIME type and capped at 4 MB — Vercel rejects a serverless request body
-  over 4.5 MB before the handler runs, so the app's own limit stays below that ceiling and a file
-  that uploads locally also uploads in production. The local-disk handler refuses any path that
-  escapes `public/uploads`.
+- Uploads are restricted by MIME type and by size per kind: 8 MB for an image or PDF, 64 MB for a
+  video. Anything over 4 MB skips the serverless function — Vercel rejects a request body over
+  4.5 MB before the handler runs — and goes straight to Blob from the browser using a short-lived
+  token from `/api/blob-upload`. That token is scoped to the one content type, size and path the
+  browser declared, is only issued to a signed-in admin, and the upload-completed callback is
+  verified against the store's HMAC signature. The local-disk handler refuses any path that escapes
+  `public/uploads`.
 - The `?next=` login parameter only accepts in-app `/admin` paths, so it cannot be used as an open
   redirect.
 - `/admin` is `noindex` in metadata and disallowed in `robots.txt`.
