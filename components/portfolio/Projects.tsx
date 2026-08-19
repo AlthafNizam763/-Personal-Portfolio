@@ -39,7 +39,12 @@ export default function Projects({ projects }: { projects: ProjectDTO[] }) {
             transition={{ type: 'spring', stiffness: 80, damping: 10, delay: index * 0.2 }}
             viewport={{ once: true }}
           >
-            <div className="lg:w-[500px] w-full rounded-2xl overflow-hidden shadow-lg">
+            {/* Fixed thumbnail frame. Every card gets the same box at a given
+                breakpoint, so a portrait screenshot and a wide one render at
+                identical dimensions instead of setting their own height from
+                their intrinsic ratio. The media is positioned to fill the frame
+                and cropped with object-cover, never scaled non-uniformly. */}
+            <div className="relative w-full h-56 sm:h-[340px] md:h-[400px] lg:w-[500px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg">
               {/* Image takes precedence over video, matching the original. The
                   main slot accepts a GIF or a clip too, so <Media> picks the
                   element from the stored URL — the precedence itself is
@@ -48,7 +53,7 @@ export default function Projects({ projects }: { projects: ProjectDTO[] }) {
                 <Media
                   src={project.image}
                   alt={project.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
+                  className="absolute inset-0 w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500 cursor-pointer"
                   width={1000}
                   height={640}
                   sizes="(max-width: 1024px) 100vw, 500px"
@@ -57,7 +62,7 @@ export default function Projects({ projects }: { projects: ProjectDTO[] }) {
                 <Media
                   src={project.video}
                   alt={`${project.title} demo`}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
                   width={1000}
                   height={640}
                   sizes="(max-width: 1024px) 100vw, 500px"

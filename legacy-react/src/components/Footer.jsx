@@ -7,7 +7,6 @@ export default function Footer() {
 
       <div className='text-white lg:font-semibold lg:text-sm font-normal text-[10px] text-right lg:space-y-3'>
         <p> © {new Date().getFullYear()} Personal Portfolio. All rights reserved.</p>
-        <p>Xpalico</p>
       </div>
     </div>
   )
