@@ -1,11 +1,14 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion'
 import { IoMdMail } from 'react-icons/io'
 import { FaPhone } from 'react-icons/fa6'
 import SocialIcons from './SocialIcons'
 import ErrorPopup from './ErrorPopup'
+import RoachSquashOverlay from './RoachSquashOverlay'
+import SuccessPopup from './SuccessPopup'
 import type { ProfileDTO, SocialLinkDTO } from '@/lib/types'
 
 /**
@@ -16,8 +19,15 @@ import type { ProfileDTO, SocialLinkDTO } from '@/lib/types'
  * the page. The form now posts to /api/contact and the submission appears in
  * Admin -> Messages. The error popup is kept for genuine server failures, but
  * it no longer reloads (that would discard whatever the visitor typed).
+ *
+ * A confirmed submission also plays a short cartoon interstitial
+ * (RoachSquashOverlay) before SuccessPopup confirms the send. Both are
+ * strictly downstream of a 2xx response — a failed or rejected submission
+ * still just sets the inline message or the error popup, exactly as before.
  */
 type Status = 'idle' | 'submitting' | 'success' | 'error'
+
+const SUCCESS_MESSAGE = "Thanks for reaching out — I'll get back to you soon."
 
 export default function Contact({
   profile,
@@ -28,10 +38,36 @@ export default function Contact({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, amount: 0.2 })
+  const prefersReducedMotion = useReducedMotion()
 
   const [status, setStatus] = useState<Status>('idle')
   const [message, setMessage] = useState('')
   const [showErrorPopup, setShowErrorPopup] = useState(false)
+  // Bumped on every accepted submission: it both starts the interstitial and
+  // keys it, so a second message replays the gag from the top.
+  const [squashRun, setSquashRun] = useState(0)
+  const [playingSquash, setPlayingSquash] = useState(false)
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false)
+  // The section fades itself in on scroll, and an ancestor's opacity would
+  // drag a nested full-screen overlay down with it — so both overlays are
+  // portalled to <body> instead.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  // The pan has landed — hand off to the confirmation dialog.
+  const revealSuccess = useCallback(() => {
+    setPlayingSquash(false)
+    setShowSuccessPopup(true)
+  }, [])
+
+  const celebrate = () => {
+    if (prefersReducedMotion) {
+      setShowSuccessPopup(true)
+      return
+    }
+    setPlayingSquash(true)
+    setSquashRun((run) => run + 1)
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -58,8 +94,9 @@ export default function Contact({
 
       if (res.ok && json?.ok) {
         setStatus('success')
-        setMessage("Thanks for reaching out — I'll get back to you soon.")
+        setMessage(SUCCESS_MESSAGE)
         form.reset()
+        celebrate()
         return
       }
 
@@ -79,6 +116,10 @@ export default function Contact({
 
   const inputClass =
     'border-2 px-5 py-3 border-black rounded placeholder:text-[#71717A] text-sm w-full'
+
+  // Stays locked through the interstitial so the form cannot be fired twice
+  // between the response landing and the confirmation appearing.
+  const busy = status === 'submitting' || playingSquash
 
   return (
     <motion.section
@@ -158,9 +199,9 @@ export default function Contact({
               className="flex justify-between gap-3 lg:gap-5 flex-col lg:flex-row"
             >
               <motion.button
-                whileHover={{ scale: status === 'submitting' ? 1 : 1.05 }}
+                whileHover={{ scale: busy ? 1 : 1.05 }}
                 type="submit"
-                disabled={status === 'submitting'}
+                disabled={busy}
                 className="bg-black justify-center w-fit lg:w-auto lg:flex-1 hover:shadow-lg text-white px-3 py-2 rounded flex items-center gap-x-3 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {status === 'submitting' ? 'Sending…' : 'Get In Touch'}
@@ -169,13 +210,15 @@ export default function Contact({
               <SocialIcons links={socialLinks} />
             </motion.div>
 
-            {/* Live region so screen readers announce the result. */}
+            {/* Live region so screen readers announce the result. Errors stay
+                inline exactly as before; the success wording is announced but
+                left invisible, since SuccessPopup now carries it visually. */}
             <p
               role="status"
               aria-live="polite"
               className={`text-sm font-mono ${
                 status === 'success' ? 'text-black' : 'text-red-600'
-              } ${message ? '' : 'sr-only'}`}
+              } ${message && status !== 'success' ? '' : 'sr-only'}`}
             >
               {message}
             </p>
@@ -241,6 +284,26 @@ export default function Contact({
           onClose={() => setShowErrorPopup(false)}
         />
       )}
+
+      {mounted &&
+        createPortal(
+          <>
+            {/* Cockroach vs. frying pan. Keyed by `squashRun` so it replays
+                cleanly on a second submission; it hides itself once it has
+                faded out. */}
+            {squashRun > 0 && <RoachSquashOverlay key={squashRun} onReveal={revealSuccess} />}
+
+            <AnimatePresence>
+              {showSuccessPopup && (
+                <SuccessPopup
+                  message={SUCCESS_MESSAGE}
+                  onClose={() => setShowSuccessPopup(false)}
+                />
+              )}
+            </AnimatePresence>
+          </>,
+          document.body
+        )}
     </motion.section>
   )
 }
