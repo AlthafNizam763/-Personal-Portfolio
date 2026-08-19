@@ -193,6 +193,48 @@ export interface PortfolioData {
   settings: SiteSettingsDTO
 }
 
+/* --------------------------------------------------------- notifications */
+
+export type NotificationChannel = 'email' | 'whatsapp' | 'push'
+
+/** The three admin-panel switches for contact-form notifications. */
+export type NotificationToggles = Record<NotificationChannel, boolean>
+
+/**
+ * Whether a channel could actually run, shown next to its toggle so an
+ * enabled-but-silent channel is never a mystery. Reports which environment
+ * variables are missing by *name* only — never a value.
+ */
+export interface NotificationChannelInfo {
+  configured: boolean
+  missing: string[]
+  provider: string
+  /** NOTIFY_<CHANNEL>_ENABLED=false in the environment overrides the toggle. */
+  killSwitch: boolean
+}
+
+/** One browser registered to receive push notifications. */
+export interface PushDeviceDTO {
+  id: string
+  label: string
+  createdAt: string
+  lastSuccessAt: string | null
+}
+
+/** Payload of GET/PUT /api/admin/settings/notifications. */
+export interface NotificationSettingsDTO {
+  toggles: NotificationToggles
+  channels: Record<NotificationChannel, NotificationChannelInfo>
+  push: {
+    /**
+     * VAPID application server key, needed by the browser to subscribe. Public
+     * by design — the private half never leaves the server.
+     */
+    publicKey: string
+    devices: PushDeviceDTO[]
+  }
+}
+
 /** Standard envelope returned by every admin API route. */
 export interface ApiResponse<T = unknown> {
   ok: boolean

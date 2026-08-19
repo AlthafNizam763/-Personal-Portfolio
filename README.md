@@ -32,6 +32,7 @@ Sign in at <http://localhost:3000/admin/login> with the credentials from `SEED_A
 | `BLOB_READ_WRITE_TOKEN` | prod     | Vercel Blob token for uploads. Leave blank locally to write into `public/uploads/`. |
 | `SEED_ADMIN_EMAIL`      | seed     | Used by `npm run seed` / `npm run create-admin`. |
 | `SEED_ADMIN_PASSWORD`   | seed     | Same. Must be 8+ chars with upper, lower and a digit. |
+| `NOTIFY_*`, `RESEND_API_KEY`, `WHATSAPP_*`, `TWILIO_*`, `VAPID_*` | no | Contact-form notifications — see [below](#contact-form-notifications). Channels are switched on in the admin panel; these hold the credentials. |
 
 ¹ Falls back to Vercel's injected host, then `http://localhost:3000`.
 
@@ -52,6 +53,8 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 | `npm run typecheck`    | `tsc --noEmit`. |
 | `npm run seed`         | Idempotent — only fills collections that are empty. `-- --force` wipes and reseeds. |
 | `npm run create-admin` | Create an admin, or reset an existing one's password (signs out all devices). |
+| `npm run test-notification` | Fires a fake contact submission at the enabled notification channels, using the same switches the live form does. |
+| `npm run generate-vapid-keys` | Prints a VAPID key pair for browser push notifications. Run once, then paste both lines into your environment. |
 
 ---
 
@@ -66,7 +69,10 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
    the reason, since Vercel's filesystem is read-only and the local-disk fallback cannot run there.
    Verify with `vercel blob list-stores`.
 3. **Environment variables** — add `MONGODB_URI`, `AUTH_SECRET` and `NEXT_PUBLIC_SITE_URL`
-   (your real domain) for Production, Preview and Development.
+   (your real domain) for Production, Preview and Development. Add the notification credentials
+   here too if you want them in production — see
+   [Contact-form notifications](#contact-form-notifications). None of them are required to deploy:
+   an unconfigured channel simply reports itself as such in the admin panel.
 4. **Deploy**, then seed once against the production database:
 
    ```bash
@@ -106,12 +112,15 @@ app/
 │       ├── page.tsx          dashboard
 │       ├── profile, skills, experience, projects, education,
 │       ├── certifications, achievements, services, social-links,
-│       └── messages, settings
+│       ├── messages, settings
+│       └── settings/notifications   channel switches + push devices
 ├── api/
 │   ├── auth/                 login, logout, me, account, change-password
 │   ├── contact/              public contact form endpoint
 │   ├── admin/[resource]/     generic CRUD for all nine collections
 │   ├── admin/profile|settings|stats|upload
+│   ├── admin/settings/notifications  channel switches (+ /test)
+│   ├── admin/push/           push device register / remove / lookup
 │   ├── blob-upload/          issues scoped tokens for direct-to-Blob uploads
 │   └── uploads/[...path]/    serves local-disk uploads at runtime (range-aware)
 components/
@@ -121,9 +130,13 @@ components/
 └── admin/                    ResourceManager, ResourceForm, FormFields,
                               Modal, ConfirmDialog, Toast, AdminShell, screens/
 lib/                          db, auth, jwt, data, storage, icons, validators,
-                              resources, serialize, seed-content, utils
+│                             resources, serialize, seed-content, utils
+└── notifications/            contact-form notifier: config, format,
+                              channels/{email,whatsapp,push}.ts
 models/                       Mongoose schemas
-scripts/                      seed.ts, create-admin.ts
+public/sw.js                  service worker — push display only, no fetch handler
+scripts/                      seed.ts, create-admin.ts, test-notification.ts,
+                              generate-vapid-keys.ts
 legacy-react/                 the original Vite app, kept for reference
 ```
 
@@ -138,6 +151,113 @@ The admin CRUD is data-driven — there are no per-resource route files:
 
 ---
 
+## Contact-form notifications
+
+A saved contact message notifies you over **email**, **WhatsApp** and **browser push**. The order
+is fixed in `app/api/contact/route.ts`:
+
+```
+validate -> rate-limit -> save to MongoDB -> read notification settings -> notify
+        -> 201 -> roach animation -> success popup
+```
+
+Nothing is sent for a rejected submission, a honeypot hit, a rate-limited request, or a failed
+write — the notifier only runs after `Message.create()` resolves. Conversely nothing about
+notifications can cost the visitor their confirmation: with every channel switched off, or every
+provider down, the message is still saved and the success flow runs exactly as before. The
+fan-out swallows its own errors and reports a per-channel status instead.
+
+### Switching channels on and off
+
+**Admin -> Settings -> Notifications** is the day-to-day control: one switch each for Email,
+WhatsApp and Push. The values live on the `SiteSettings` singleton and are read fresh on every
+submission — no cache, no redeploy, so a switch flipped now applies to the next message.
+
+Each row also shows whether that channel *can* run, so a switch that is on but silent explains
+itself rather than looking broken:
+
+| Badge              | Meaning |
+| ------------------ | ------- |
+| **Ready**          | Credentials present. Push also shows how many devices are registered. |
+| **Not configured** | Switched on, but environment variables are missing (hover to see which). |
+| **Off in environment** | `NOTIFY_<CHANNEL>_ENABLED=false` overrides the panel — see below. |
+
+There is a second, deployment-level switch: setting `NOTIFY_EMAIL_ENABLED`,
+`NOTIFY_WHATSAPP_ENABLED` or `NOTIFY_PUSH_ENABLED` to `false` forces that channel off no matter
+what the panel says. It exists for a staging deployment pointed at the production database.
+Leave them unset and the panel decides.
+
+A channel sends only when **the panel switch is on**, **no kill switch blocks it**, and **its
+credentials resolve**. Anything else is reported as `disabled` or `misconfigured`.
+
+Providers are chosen the same way:
+
+- **Email** — `EMAIL_PROVIDER=resend` (default) or `sendgrid`. Plain HTTPS + JSON, no SDK.
+- **WhatsApp** — `WHATSAPP_PROVIDER=meta` (default, Cloud API) or `twilio`. Same.
+- **Push** — Web Push (VAPID) via the `web-push` package, straight to the browser's push service.
+
+Adding another email or WhatsApp provider means one `send*` function and one branch inside the
+relevant file in `lib/notifications/channels/`.
+
+```bash
+npm run test-notification            # same switches the live form uses
+npm run test-notification -- "Ada" ada@example.com
+```
+
+There is also a **Send test notification** button on the settings screen, which reports each
+channel's status and the provider's own error message inline.
+
+### Browser push
+
+Push is the one channel that needs setup on both ends.
+
+1. `npm run generate-vapid-keys`, then put `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in your
+   environment. Generate once and keep them: replacing the pair unsubscribes every device.
+2. Open **Settings -> Notifications** on each device you want to be reached on and press
+   **Enable on this device**. Permission can only be granted by the browser you are sitting at,
+   which is why one switch is not enough.
+
+Registered browsers appear in the device list with the date they were added and their last
+delivery, and can be removed individually. A subscription the push service reports as gone
+(HTTP 404/410) is deleted automatically on the next send.
+
+Requirements worth knowing: push needs a **secure context** (https, or localhost in development),
+and on iPhone/iPad the site must be added to the Home Screen first — the screen says so when the
+browser cannot support it. The service worker (`public/sw.js`) is registered at the root scope so
+it can receive pushes with the site closed, and deliberately has **no `fetch` handler**, so it
+never intercepts a request and the public portfolio behaves exactly as before.
+
+### WhatsApp's 24-hour window
+
+The Cloud API only delivers **free-form text** to someone who messaged your business number in
+the previous 24 hours — which a notification to yourself usually is not, so it comes back as
+error `131047`. Create an approved template with four body placeholders and set
+`WHATSAPP_TEMPLATE_NAME`; the channel then sends that instead:
+
+```
+{{1}} name   {{2}} email   {{3}} subject   {{4}} message
+```
+
+Plain text is fine while testing inside the window. Twilio behaves the same way.
+
+### What gets sent
+
+Email carries the full submission: name, email, phone (when present), website, subject,
+submission time and the message, with **Reply-To set to the visitor** so answering it in your
+inbox replies to them. WhatsApp and push carry a short version — sender, subject and a preview —
+and push deep-links to the admin inbox.
+
+The form currently has no phone or subject input, so those fall back to "omitted" and
+*"New portfolio enquiry from …"* respectively; `contactSchema` and the `Message` model already
+accept both, so adding the inputs later needs no other change.
+
+Delivery status is stamped onto the message document (`notifications.email`,
+`notifications.whatsapp`, `notifications.push`, `notifications.attemptedAt`,
+`notifications.error`), and the public API response carries the statuses alone — never an
+address, token or provider payload.
+
+---
+
 ## Security
 
 - Sessions are JWTs (HS256, `jose`) in an httpOnly, SameSite=Lax cookie; `secure` in production.
@@ -147,6 +267,13 @@ The admin CRUD is data-driven — there are no per-resource route files:
   previously issued cookie.
 - Login is rate-limited per IP+email; the contact form per IP. Both are in-memory, so on serverless
   they only constrain a single warm container — put a WAF in front if you need hard guarantees.
+- Notification credentials live only in server-side variables (no `NEXT_PUBLIC_` prefix) and are
+  read inside `lib/notifications/`, which throws if it is ever bundled for the browser. Provider
+  errors are logged and stored, never returned to the visitor. The VAPID *public* key is the one
+  value deliberately sent to the browser — it has to be, for a browser to subscribe at all.
+- Push endpoints are capability URLs: anyone holding one can push to that browser. They are
+  written by the admin-only register route and never read back out; the settings API returns
+  device ids and labels only.
 - Uploads are restricted by MIME type and by size per kind: 8 MB for an image or PDF, 64 MB for a
   video. Anything over 4 MB skips the serverless function — Vercel rejects a request body over
   4.5 MB before the handler runs — and goes straight to Blob from the browser using a short-lived

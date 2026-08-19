@@ -260,6 +260,15 @@ export const contactSchema = z.object({
   website: z.string().trim().max(300).default(''),
   message: z.string().trim().min(5, 'Please write a short message.').max(5000),
   /**
+   * Optional extras. The rendered form has no inputs for these, so they are
+   * absent from every submission today; accepting them keeps the contract
+   * forward-compatible with a form that does collect them, and lets the owner
+   * notifications show a phone number and a real subject line once it does.
+   * No existing rule changes — an omitted field simply defaults to ''.
+   */
+  phone: z.string().trim().max(40).optional().default(''),
+  subject: z.string().trim().max(200).optional().default(''),
+  /**
    * Honeypot — real users never fill this hidden field.
    *
    * Deliberately permissive: rejecting it here would return a 422 that tells
@@ -267,6 +276,48 @@ export const contactSchema = z.object({
    * with a normal success response and simply discards it.
    */
   company: z.string().max(200).optional().default(''),
+})
+
+// --- notification settings -------------------------------------------------
+
+/**
+ * The three admin-panel switches for contact-form notifications.
+ *
+ * Strict booleans rather than `z.coerce.boolean()` (used for the section
+ * toggles above): coercion turns the string "false" into `true`, which for an
+ * on/off switch would silently do the opposite of what was asked. The admin
+ * client sends real JSON booleans, so anything else is a bug worth a 422.
+ */
+export const notificationSettingsSchema = z.object({
+  email: z.boolean(),
+  whatsapp: z.boolean(),
+  push: z.boolean(),
+})
+
+/**
+ * A browser's push subscription, exactly as `PushManager.subscribe()` returns
+ * it. The endpoint is the push service URL the server will POST to, so it is
+ * held to https — the only scheme the Web Push protocol uses.
+ */
+export const pushSubscriptionSchema = z.object({
+  endpoint: z
+    .string()
+    .trim()
+    .min(1, 'The browser did not return a push endpoint.')
+    .max(1000)
+    .refine((value) => {
+      try {
+        return new URL(value).protocol === 'https:'
+      } catch {
+        return false
+      }
+    }, 'A push endpoint must be an https URL.'),
+  keys: z.object({
+    p256dh: z.string().trim().min(1).max(255),
+    auth: z.string().trim().min(1).max(255),
+  }),
+  /** Free-text device name shown in the admin device list. */
+  label: z.string().trim().max(120).optional().default(''),
 })
 
 // --- reorder ---------------------------------------------------------------

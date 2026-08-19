@@ -17,6 +17,7 @@ import {
   TbLink,
   TbMail,
   TbSettings,
+  TbBell,
   TbLogout,
   TbMenu2,
   TbExternalLink,
@@ -30,6 +31,8 @@ interface NavItem {
   href: string
   label: string
   Icon: IconType
+  /** Rendered indented beneath the parent, e.g. Settings -> Notifications. */
+  children?: NavItem[]
 }
 
 const NAV_GROUPS: { heading: string; items: NavItem[] }[] = [
@@ -55,7 +58,14 @@ const NAV_GROUPS: { heading: string; items: NavItem[] }[] = [
     heading: 'Inbox & setup',
     items: [
       { href: '/admin/messages', label: 'Messages', Icon: TbMail },
-      { href: '/admin/settings', label: 'Settings', Icon: TbSettings },
+      {
+        href: '/admin/settings',
+        label: 'Settings',
+        Icon: TbSettings,
+        children: [
+          { href: '/admin/settings/notifications', label: 'Notifications', Icon: TbBell },
+        ],
+      },
     ],
   },
 ]
@@ -103,8 +113,12 @@ export default function AdminShell({
     }
   }
 
-  const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
+  const isActive = (item: NavItem) => {
+    // The dashboard and any link with sub-pages match exactly; everything else
+    // stays highlighted for its own nested routes.
+    if (item.href === '/admin' || item.children?.length) return pathname === item.href
+    return pathname.startsWith(item.href)
+  }
 
   const initials =
     user.name
@@ -114,6 +128,31 @@ export default function AdminShell({
       .slice(0, 2)
       .join('')
       .toUpperCase() || 'A'
+
+  const renderLink = (item: NavItem) => {
+    const active = isActive(item)
+    return (
+      <Link
+        href={item.href}
+        aria-current={active ? 'page' : undefined}
+        className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+          active ? 'bg-black text-white' : 'text-admin-ink hover:bg-admin-bg'
+        }`}
+      >
+        <item.Icon size={18} aria-hidden="true" className="shrink-0" />
+        <span className="flex-1 truncate">{item.label}</span>
+        {item.href === '/admin/messages' && unreadCount > 0 && (
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+              active ? 'bg-white text-black' : 'bg-black text-white'
+            }`}
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </Link>
+    )
+  }
 
   const sidebar = (
     <div className="flex flex-col h-full bg-white">
@@ -136,34 +175,19 @@ export default function AdminShell({
               {group.heading}
             </p>
             <ul className="space-y-0.5">
-              {group.items.map(({ href, label, Icon }) => {
-                const active = isActive(href)
-                return (
-                  <li key={href}>
-                    <Link
-                      href={href}
-                      aria-current={active ? 'page' : undefined}
-                      className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                        active
-                          ? 'bg-black text-white'
-                          : 'text-admin-ink hover:bg-admin-bg'
-                      }`}
-                    >
-                      <Icon size={18} aria-hidden="true" className="shrink-0" />
-                      <span className="flex-1 truncate">{label}</span>
-                      {href === '/admin/messages' && unreadCount > 0 && (
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
-                            active ? 'bg-white text-black' : 'bg-black text-white'
-                          }`}
-                        >
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                )
-              })}
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  {renderLink(item)}
+
+                  {item.children && item.children.length > 0 && (
+                    <ul className="mt-0.5 ml-[26px] space-y-0.5 border-l border-admin-border pl-2">
+                      {item.children.map((child) => (
+                        <li key={child.href}>{renderLink(child)}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         ))}

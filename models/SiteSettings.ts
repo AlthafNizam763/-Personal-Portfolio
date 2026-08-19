@@ -18,6 +18,17 @@ const SiteSettingsSchema = new Schema(
     twitterHandle: { type: String, default: '' },
     themeColor: { type: String, default: '#000000' },
     showCursorAnimation: { type: Boolean, default: true },
+    /**
+     * Owner notifications for contact-form submissions, one switch per
+     * channel. These are the admin-facing controls; the credentials each
+     * channel needs still live in environment variables. All default to true
+     * so an existing deployment keeps notifying after this field is added.
+     */
+    notifications: {
+      email: { type: Boolean, default: true },
+      whatsapp: { type: Boolean, default: true },
+      push: { type: Boolean, default: true },
+    },
     sections: {
       hero: { type: Boolean, default: true },
       skills: { type: Boolean, default: true },
